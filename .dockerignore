@@ -1,0 +1,8 @@
+node_modules
+data
+.git
+*.pdf
+*.jpg
+*.png
+tmp
+test-results

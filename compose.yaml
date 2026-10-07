@@ -1,0 +1,19 @@
+services:
+  virus:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      MAX_PLAYERS: "8"
+      STATE_FILE: /app/data/rooms.json
+    volumes:
+      - virus-data:/app/data
+    restart: unless-stopped
+    init: true
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+volumes:
+  virus-data:

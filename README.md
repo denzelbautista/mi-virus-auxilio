@@ -1,0 +1,97 @@
+# VIRUS! · El laboratorio
+
+Adaptación independiente y jugable en español de VIRUS!, basada en `Virus.pdf`. Arte vectorial original, cartas planas con selección elevada y lanzamiento con perspectiva, fondo de Three.js y multijugador real mediante WebSocket.
+
+![Vista de una partida con cuatro jugadores](docs/vista-previa.jpg)
+
+## Abrir el juego
+
+Requiere Node.js 22 o superior.
+
+```sh
+npm install
+npm start
+```
+
+Abre http://localhost:3000. Escribe tu nombre y crea una sala. Elige entre 2 y 8 plazas al crear la sala y comparte el enlace o el código con hasta siete amigos. El anfitrión puede comenzar con al menos dos participantes. La práctica usa la cantidad de plazas seleccionada y añade hasta siete bots.
+
+En una misma red, los demás entran desde `http://IP-DE-TU-COMPUTADORA:3000`. Un enlace de localhost solo sirve en la computadora que ejecuta el servidor: para invitar desde otra computadora, abre primero la dirección IP de la red y copia la invitación desde allí. Para jugadores en redes diferentes, aloja este servidor en un servicio público que admita Node.js, WebSocket y almacenamiento persistente, con HTTPS. No basta con subir los archivos HTML a un alojamiento estático.
+
+## Jugar
+
+- Primer clic: selecciona y eleva la carta. Segundo clic: juega un órgano o un guante, o permite elegir un destino. También puedes pulsar «Jugar carta».
+- Los destinos válidos brillan en verde. Virus y medicinas permiten escoger cualquier cuerpo, incluido el propio.
+- Trasplante: escoge dos órganos entre dos jugadores cualesquiera. Error médico: escoge un rival. Contagio: elige una distribución máxima de tus virus; se propone una válida automáticamente.
+- «Cambiar cartas»: la carta seleccionada se conserva y queda marcada para cambiar. Puedes añadir otras cartas o desmarcarlas y luego confirmar. Es una acción completa de turno.
+- Las cartas robadas se reponen automáticamente. No se permite pasar sin jugar o descartar.
+- Cuatro órganos diferentes sanos, vacunados o inmunizados ganan. El multicolor cuenta como órgano independiente: puedes tener cinco y ganar con cuatro sanos.
+- Haz clic en un órgano para inspeccionar sus virus y vacunas. La ayuda contiene todas las reglas, tratamientos y aclaraciones multicolor. Escape cancela la selección.
+
+Mazo base de 68 cartas (2 a 4 participantes): 21 órganos (5 de cada color básico y 1 multicolor), 17 virus (4 de cada color básico y 1 multicolor), 20 medicinas (4 por color, incluido multicolor), y 10 tratamientos (1 trasplante, 3 ladrones, 2 contagios, 3 guantes y 1 error médico). Al agotarse el mazo, se voltea el descarte sin barajar.
+
+Para 5 a 8 participantes, esta adaptación usa una variante con mazo ampliado. Se multiplica la cantidad original de cada combinación de tipo y color, y de cada tratamiento, por `participantes / 4` y se redondea a la carta más cercana. Los cuatro colores básicos conservan exactamente la misma cantidad entre sí. Cada copia tiene su propio identificador y el mismo diseño; los órganos multicolor siguen siendo un color independiente y no se pueden repetir en un cuerpo.
+
+| Participantes al comenzar | Cartas totales |
+|---|---|
+| 2–4 | 68 |
+| 5 | 84 |
+| 6 | 107 |
+| 7 | 121 |
+| 8 | 136 |
+
+A ocho, la distribución es exactamente el doble: 42 órganos, 34 virus, 40 medicinas y 20 tratamientos. El tamaño depende de quienes comienzan la partida, no de las plazas libres. El mazo queda fijo durante la partida, incluso si hay eliminaciones; una revancha recalcula el mazo para los participantes que queden. Se conservan manos de tres cartas y la victoria con cuatro órganos sanos. El reglamento comercial indica 2 a 6 jugadores; el ajuste del mazo y la opción de ocho son reglas de esta adaptación. Las pruebas de partidas completas verifican conservación y victorias; el equilibrio entre jugadores humanos puede afinarse con partidas reales.
+
+![Mesa ampliada con ocho jugadores](docs/mesa-ocho-jugadores.jpg)
+
+## Salas, privacidad y reconexión
+
+El servidor es la autoridad sobre las jugadas. Cada sala tiene su propio estado, mazo, descarte, versión y temporizador. El cliente recibe solo su mano; los rivales se muestran con cartas ocultas. El servidor valida turno, pertenencia, revisión de mesa, destinos, tratamientos y capacidad antes de modificar el juego. Una sesión usa un token aleatorio que nunca se comparte en el enlace de invitación.
+
+Al recargar o perder conexión, se retoma el mismo asiento desde esta pestaña. «Salir» de una partida online permite retomarla con «Reanudar sala» en el mismo navegador y pestaña durante cinco minutos. Si llega el turno de un jugador ausente, se conserva su turno y su mano mientras tiene tiempo para regresar. Al cumplir cinco minutos seguidos desconectado, queda eliminado: todas sus cartas, incluidos órganos, virus y medicinas sobre la mesa, se reintegran al mazo y este se baraja. La partida continúa con el siguiente jugador que corresponda, sin saltar a otro jugador por un cambio de índices. Si queda un solo jugador, gana por abandono aunque no tenga cuatro órganos sanos. Si todos son eliminados a la vez, la partida se cierra sin ganador. La reconexión antes del plazo cancela la eliminación. El plazo también libera asientos ausentes en el lobby y se conserva al reiniciar el servidor. El anfitrión pasa a un jugador que siga en la sala. Si no hay humanos conectados, los turnos se pausan, pero los plazos de ausencia siguen corriendo. Los bots no se añaden a partidas online ni quedan eliminados por desconexión.
+
+El anfitrión inicia partidas y revanchas. Si abandona el lobby, el siguiente jugador pasa a ser anfitrión. Las partidas se guardan en `data/rooms.json` después de cada cambio, mediante escritura temporal y renombrado. Tras reiniciar el servidor, los jugadores pueden reconectarse a su partida. Las salas vacías del lobby caducan a los 30 minutos; las partidas sin humanos conectados, a las 24 horas. Si el archivo de estado está dañado, el servidor se detiene para evitar sobrescribirlo.
+
+El sistema está diseñado para **un proceso de servidor** con múltiples salas. No ejecutes varias instancias contra el mismo archivo. Para escalar a varios servidores necesitarás almacenamiento compartido, coordinación de salas y afinidad de conexión; el motor de reglas puro permite esa evolución.
+
+## Configuración
+
+| Variable | Por defecto | Uso |
+|---|---|---|
+| `PORT` | `3000` | Puerto HTTP y WebSocket |
+| `HOST` | `0.0.0.0` | Dirección de escucha |
+| `MAX_PLAYERS` | `8` | Límite del servidor entre 2 y 8; cada nueva sala elige su capacidad |
+| `MAX_ROOMS` | `500` | Límite de salas por proceso, no garantía de carga |
+| `STATE_FILE` | `data/rooms.json` | Archivo persistente privado |
+| `DISCONNECT_TIMEOUT_MS` | `300000` | Plazo de ausencia antes de la eliminación (5 minutos) |
+
+Las salas conservan la capacidad con la que fueron creadas, incluidas las partidas guardadas de cuatro plazas. El selector de nuevas salas ofrece de 2 a `MAX_PLAYERS` plazas (4 preseleccionadas). Las mesas de 5 a 8 jugadores distribuyen hasta tres rivales al frente y dos en cada lateral; en pantallas estrechas, los rivales aparecen en una cuadrícula y la mesa permite desplazamiento vertical.
+
+## Pruebas
+
+```sh
+npm test
+```
+
+Pruebas del motor: distribución y escalado del mazo hasta ocho, manos privadas, colores, inmunidad, curas, vacunas, extirpación, cinco tratamientos, contagio máximo, guante, turnos, descarte, reciclaje del mazo, victorias y 68 partidas generadas completas entre 4 y 8 participantes, con conservación de todas las cartas. Pruebas del servidor: ocho clientes simultáneos, capacidades por sala, límite de ocho, siete bots, orden completo de turnos, reinicio de partidas ampliadas, cuatro clientes en salas anteriores, una segunda partida independiente, sala llena, acciones inválidas, revisiones antiguas, acceso del anfitrión, sesión privada, reconexión, sustitución de conexión, recuperación tras reinicio y eliminación por ausencia, devolución íntegra de cartas, avance correcto de turnos y victoria por abandono. Los tests acortan el plazo mediante `DISCONNECT_TIMEOUT_MS`; en el juego normal son cinco minutos. Se usan servidores temporales y un archivo separado; no se modifica la partida de desarrollo.
+
+## Alojamiento
+
+```sh
+docker compose up --build -d
+```
+
+El volumen `virus-data` conserva las partidas. Coloca un proxy con HTTPS delante del puerto 3000 y habilita la actualización WebSocket. Mantén el encabezado `Host` del navegador al reenviar solicitudes: se comprueba que el origen coincida con él. Respalda el volumen y no publiques su contenido. Endpoint de estado: `/health`.
+
+Este repositorio incluye la configuración de despliegue, pero no está publicado en Internet. La prueba local no equivale a una prueba de carga de 500 salas.
+
+## Estructura
+
+`shared/game.js`: reglas puras, acciones válidas y vista privada por jugador. `server/index.js`: salas, sesiones, WebSocket, bots y persistencia. `public/app.js`: interfaz y animaciones. `public/art.js`: ilustraciones y cartas SVG. `public/scene.js`: fondo de Three.js. `public/style.css`: diseño adaptable y movimiento reducido. `public/expanded.css`: salas y mesa ampliada hasta ocho, con distribución adaptable. `public/table.css`: mesa sin distorsión de perspectiva, manos laterales en columna, mano frontal en fila, órganos con virus y medicinas superpuestos y descarte apilado. Los nombres se ajustan en varias líneas y las pantallas estrechas permiten desplazamiento vertical para conservar el espacio de cada jugador.
+
+## Referencias
+
+- Reglamento adjunto: `Virus.pdf`.
+- [Aclaraciones oficiales de VIRUS!, Tranjis Games](https://tranjisgames.com/blog/nuestros-juegos-7/virus-preguntas-frecuentes-9), especialmente las interacciones multicolor.
+- [UNO para PC, Ubisoft](https://www.ubisoft.com/en-gb/games/uno), además de las capturas adjuntas, como referencia de mesa, mano visible, selección y lanzamiento.
+
+VIRUS! es de Tranjis Games. Esta es una adaptación independiente sin afiliación. Las ilustraciones son originales de este proyecto; no se reutilizan las ilustraciones comerciales del PDF o de las fotos.

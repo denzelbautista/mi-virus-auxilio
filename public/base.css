@@ -1,0 +1,2 @@
+/* System typography keeps the game self-contained and available offline. */
+html{scroll-behavior:smooth}::selection{background:#d7f68b;color:#173a34}input,select,button{font-family:inherit}

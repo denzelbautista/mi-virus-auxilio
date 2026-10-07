@@ -1,0 +1,104 @@
+/* Cards keep their original proportions. Only rotations within the table plane remain. */
+.table{perspective:none;--table-angle:0deg;--organ-width:59.84px;--back-width:37px;--stack-height:119.68px;min-height:940px}
+.table-orbit{left:50%;right:auto;top:43%;bottom:auto;width:91%;height:68%;transform:translate(-50%,-50%);border:1px solid #bfd99524;background:radial-gradient(ellipse,#70915520 0%,#284c3a30 54%,#0f342b10 76%);box-shadow:inset 0 -28px 42px #031c1728;pointer-events:none}
+.table-orbit:before,.table-orbit:after{content:'';position:absolute;border:1px solid #d7f68b12;border-radius:50%;inset:5%}
+.table-orbit:after{inset:13%;border-style:dashed}
+.seat{max-width:none;width:240px;height:450px;display:block;pointer-events:none}
+.seat>*{pointer-events:auto}
+.seat-top{top:58px;left:50%;width:260px;transform:translateX(-50%)}
+.seat-left{left:24px;right:auto;top:205px}
+.seat-right{right:24px;left:auto;top:205px}
+.player-tag{width:max-content;min-width:0;max-width:240px;padding:9px 12px;border-radius:14px;gap:10px;background:#102c29e0;position:relative;z-index:5}
+.player-name{font-size:15px;max-width:174px;line-height:1.4}
+.player-tag .avatar{height:42px;width:42px;font-size:17px;border-radius:13px;flex-shrink:0}
+.player-tag.absent{opacity:.55;border-style:dashed}
+.player-tag.active{box-shadow:0 0 30px #d7f68b12}
+.seat-top .player-tag{position:absolute;left:50%;top:0;transform:translateX(-50%)}
+.seat-left .player-tag,.seat-right .player-tag{position:absolute;top:0;left:0}
+.seat-right .player-tag{left:auto;right:0}
+.hand-backs{position:absolute;display:flex;gap:7px;justify-content:center;align-items:center;width:max-content;height:auto;margin:0;opacity:1;perspective:none;transform:none;filter:drop-shadow(0 6px 5px #071d184d)}
+.hand-backs .mini-back{width:var(--back-width);margin:0;flex-shrink:0;transform:none;filter:none}
+.mini-back>svg{width:100%;height:auto}
+.seat-top .hand-backs{left:50%;top:75px;transform:translateX(-50%);flex-direction:row}
+.seat-left .hand-backs{left:0;top:82px;flex-direction:column}
+.seat-right .hand-backs{right:0;top:82px;flex-direction:column}
+.seat .body-cards{position:absolute;width:max-content;max-width:none;height:var(--stack-height);min-height:0;display:flex;align-items:flex-end;justify-content:center;gap:8px;flex-wrap:nowrap;filter:drop-shadow(0 5px 5px #08251e55)}
+.body-organ{transform:none;flex-shrink:0;filter:none;overflow:visible}
+.seat .body-organ{width:var(--organ-width)}
+.organ-stack{position:relative;display:block;width:100%;aspect-ratio:240 / calc(336 + var(--layers)*72)}
+.organ-base{position:absolute;bottom:0;left:0;width:100%}
+.organ-attachment{position:absolute;left:0;top:calc(var(--layer)*100%*72 / (336 + var(--layers)*72));width:100%;filter:drop-shadow(0 2px 2px #061d1860)}
+.organ-stack svg{width:100%;height:auto;pointer-events:none}
+.seat .body-empty{padding:0;gap:8px;align-items:flex-end}
+.seat .empty-slot{width:var(--organ-width);height:calc(var(--organ-width)*1.4);background:#ffffff02;border-color:#ffffff13}
+.seat-top .body-cards{left:50%;top:195px;transform:translateX(-50%) rotate(180deg);transform-origin:center center}
+.seat-left .body-cards{left:calc(var(--back-width) + 24px + var(--stack-height));top:82px;transform:rotate(90deg);transform-origin:0 0}
+.seat-right .body-cards{right:calc(var(--back-width) + 24px + var(--stack-height));top:82px;transform:rotate(-90deg);transform-origin:100% 0}
+.deck-pile{position:absolute;left:21%;top:76px;z-index:2;width:96px;text-align:center}
+.deck-pile .pile-card{width:96px;height:134px;transform:rotate(-10deg);box-shadow:2px 4px 0 #bdc7af,4px 7px 0 #e0e6d3,5px 10px 0 #8b9e80,7px 13px 0 #b9c6a8;filter:drop-shadow(0 9px 8px #061d1866)}
+.table-center{left:50%;top:36%;gap:0;transform:translate(-50%,-50%);perspective:none;z-index:3}
+.pile.discard{width:115px}
+.discard-stack{position:relative;width:104px;height:146px;margin:auto;transform:none;filter:drop-shadow(0 7px 8px #061d1877)}
+.discard-layer{position:absolute;inset:0;transform:translate(var(--dx,0px),var(--dy,0px)) rotate(var(--rotation,0deg));transform-origin:50% 60%;box-shadow:0 2px 3px #14342d4d;border-radius:9px}
+.discard-layer>svg{width:100%;height:auto}
+.pile.discard .empty-pile{width:104px;height:146px;transform:none;background:#14382944}
+.pile-label{margin-top:18px;font-size:12px;letter-spacing:1.2px}
+.own-zone{bottom:350px;height:160px;display:block}
+.own-player{position:absolute;left:24px;top:185px}
+.own-player .player-tag{background:#102c29d0;border-color:#ffffff0e;padding:9px 12px;min-width:0}
+.own-body{align-items:center;gap:12px;margin:auto;width:max-content;max-width:100%}
+.body-title{display:block;font-size:12px;letter-spacing:2px}
+.own-body .body-cards{display:flex;gap:10px;max-width:none;height:152px;min-height:0;align-items:flex-end;flex-wrap:nowrap;transform:none;filter:drop-shadow(0 5px 5px #061d1844)}
+.own-body .body-organ{width:66.88px}
+.own-body .empty-slot{width:63.36px;height:88.88px;background:#ffffff02}
+.hand-zone{bottom:16px}
+.hand{height:234px;gap:8px;perspective:none}
+.hand-card{width:144px}
+.hand-actions{left:calc(50% + 252px);bottom:54px;min-width:150px}
+.hand-actions .primary,.hand-actions .secondary,.discard-toggle{font-size:13px;padding:13px 15px}
+.hand-hint{font-size:12px;margin-top:21px;max-width:95%;line-height:1.6}
+.selection-info{right:calc(50% + 258px);bottom:54px;width:200px;max-width:200px;text-align:left;padding:14px 16px;border-radius:12px;background:#102c29d0;border:1px solid #ffffff0b;pointer-events:none}
+.selection-info p{font-size:14px;line-height:1.6;margin:8px 0 0;color:#b2c5b1}
+.selection-info strong{font-size:17px}.selection-info small{font-size:11px}
+.hand-card.discard-selected.selected{transform:translateY(-23px) rotate(0deg)}
+.target-banner{top:38%;left:77%;width:180px;font-size:13px;z-index:6;background:#132e26f2}
+.target-banner small{font-size:11px}
+.turn-pill{white-space:nowrap;font-size:13px;padding:9px 17px;top:-44px}
+.disconnect-count{font-variant-numeric:tabular-nums;color:#f1d095;font-weight:750;margin-left:3px}
+.turn-pill.disconnected{border-color:#e5b78330;background:#3c392b;color:#f1d095}
+.table-label,.turn-counter{font-size:12px}
+.feed{min-height:940px}.feed-title{font-size:14px}.feed-title span{font-size:10px}.objective strong{font-size:14px}.objective p,.log-entry{font-size:13px}.log-title{font-size:11px}.log-entry small{font-size:10px}.feed-tip,.feed-tip button{font-size:12px}
+@media(max-width:1200px){.game-layout{grid-template-columns:1fr}.feed{display:none}}
+@media(min-width:1500px){.table{--organ-width:66px;--back-width:41px;--stack-height:132px;min-height:990px}.seat-left,.seat-right{top:215px}.seat-top .body-cards{top:207px}.own-body .body-organ{width:73.92px}.own-body .body-cards{height:168px}.hand-card{width:158px}.hand{height:254px}.own-zone{bottom:375px}.hand-actions{left:calc(50% + 280px)}.selection-info{right:calc(50% + 280px)}.feed{min-height:990px}}
+@media(max-width:1000px){.table{--organ-width:49.28px;--back-width:31px;--stack-height:98.56px;min-height:890px}.seat{width:206px}.seat-left{left:16px;top:195px}.seat-right{right:16px;top:195px}.seat-top{top:58px}.seat-top .body-cards{top:171px}.player-name{font-size:14px;max-width:125px}.player-tag{max-width:205px}.seat .body-cards{gap:6px}.deck-pile{left:17%;width:76px;top:88px}.deck-pile .pile-card{width:76px;height:106px}.own-body .body-organ{width:58.08px}.own-body .body-cards{height:132px;gap:8px}.own-zone{bottom:340px;height:148px}.own-player{left:16px;top:180px}.hand-card{width:130px}.hand{height:217px}.hand-actions{left:calc(50% + 215px);min-width:120px}.selection-info{right:calc(50% + 215px);width:150px;padding:12px}.selection-info p{font-size:13px}.selection-info strong{font-size:15px}.hand-actions .primary,.hand-actions .secondary,.discard-toggle{font-size:12px;padding:11px}.target-banner{display:none}}
+@media(max-width:700px){.table{--organ-width:35.2px;--back-width:22.5px;--stack-height:70.4px;min-height:870px}.table-label,.turn-counter{font-size:10px}.table-label{max-width:76%;white-space:nowrap;overflow:hidden}.seat{width:145px;height:300px}.seat-top{top:53px;width:170px}.seat-left{left:10px;top:232px}.seat-right{right:10px;top:232px}.player-tag,.seat .player-tag{padding:7px;gap:7px;max-width:145px;border-radius:10px;min-width:0}.player-tag .avatar,.seat .player-tag .avatar{width:30px;height:30px;border-radius:9px;font-size:13px}.player-name,.seat .player-name{font-size:12px;max-width:92px}.seat-top .hand-backs{top:62px}.seat-left .hand-backs,.seat-right .hand-backs{top:66px}.seat .body-cards{gap:5px}.seat-top .body-cards{top:143px}.seat-left .body-cards{top:66px;left:calc(var(--back-width) + 12px + var(--stack-height))}.seat-right .body-cards{top:66px;right:calc(var(--back-width) + 12px + var(--stack-height))}.hand-backs{gap:5px}.deck-pile{left:13%;top:118px;width:57px}.deck-pile .pile-card{width:57px;height:80px}.discard-stack,.pile.discard .empty-pile{width:74px;height:104px}.pile.discard{width:85px}.table-center{top:34%}.pile-label{font-size:10px;letter-spacing:.5px;margin-top:14px}.own-zone{bottom:320px;height:126px}.own-body .body-organ{width:43.12px}.own-body .empty-slot{width:39.6px;height:55.44px}.own-body .body-cards{height:98px;gap:6px}.body-title{font-size:10px}.own-player{left:50%;top:142px;transform:translateX(-50%)}.own-player .player-tag{padding:6px 9px;max-width:230px;gap:8px}.own-player .player-name{max-width:170px;font-size:13px}.own-player .player-tag .avatar{width:28px;height:28px;font-size:12px}.hand-zone{bottom:14px}.hand-card{width:112px}.hand{height:178px;gap:4px}.hand-actions{position:static;flex-direction:row;margin:12px 0 0;gap:10px;min-height:40px}.hand-actions .primary,.hand-actions .secondary,.discard-toggle{font-size:12px;padding:10px 13px}.hand-hint{font-size:11px;margin-top:12px;padding:0 12px}.turn-pill{top:-35px;max-width:94%;white-space:normal;text-align:center;font-size:11px;padding:7px 12px}.selection-info{display:none}.hand-card.discard-selected.selected{transform:translateY(-13px) rotate(0deg)}}
+@media(max-width:380px){.table{--organ-width:31.68px;--back-width:20px;--stack-height:63.36px}.seat{width:132px}.player-name,.seat .player-name{max-width:80px;font-size:11px}.own-body .body-organ{width:38.72px}.hand-card{width:101px}.hand{height:165px}}
+/* The front name sits beside its hand, leaving a clear lane for the central pile. */
+.seat-top{--organ-width:52.8px;--stack-height:105.6px}
+.seat-top .player-tag{left:calc(50% + 134px);top:18px;transform:none}
+.seat-top .hand-backs{top:0}
+.seat-top .body-cards{top:120px}
+.table-center{top:39.5%}
+.pile.discard .pile-label{position:absolute;left:calc(100% + 18px);top:50%;transform:translateY(-50%);margin:0}
+.own-zone{height:178px;bottom:340px}
+@media(min-width:1500px){.seat-top{--organ-width:59.84px;--stack-height:119.68px}.seat-top .player-tag{left:calc(50% + 148px)}.seat-top .body-cards{top:134px}.own-zone{height:194px;bottom:365px}}
+@media(max-width:1000px){.seat-top{--organ-width:47.52px;--stack-height:95.04px}.seat-top .player-tag{left:calc(50% + 115px);top:12px}.seat-top .body-cards{top:103px}.own-zone{height:158px;bottom:325px}.own-player{top:180px}}
+@media(max-width:700px){.seat-top{--organ-width:35.2px;--stack-height:70.4px}.seat-top .player-tag{left:50%;top:0;transform:translateX(-50%)}.seat-top .hand-backs{top:62px}.seat-top .body-cards{top:143px}.table-center{top:37%}.pile.discard .pile-label{left:calc(100% + 12px);font-size:9px}.own-zone{height:122px;bottom:320px}.own-player{top:142px}}
+.player-name{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere;line-height:1.3}
+.own-player{top:200px}
+.body-title{display:none}
+.own-body .body-cards{height:178px}
+@media(min-width:1500px){.own-body .body-cards{height:194px}}
+@media(max-width:1000px){.own-player{top:195px}.own-body .body-cards{height:158px}}
+@media(max-width:700px){.own-player{top:142px}.own-body .body-cards{height:122px}}
+@media(max-width:700px){.table{min-height:1060px}.seat-left,.seat-right{top:300px}.own-zone{bottom:360px}}
+.deck-pile{top:56px}
+.deck-pile .pile-label{position:absolute;right:calc(100% + 16px);top:50%;transform:translateY(-50%);margin:0}
+@media(max-width:1000px){.deck-pile{top:76px}.deck-pile .pile-label{right:calc(100% + 12px)}}
+@media(max-width:700px){.deck-pile{top:118px}.deck-pile .pile-label{position:static;transform:none;margin-top:14px}}
+
+/* Hidden hands lie flat and face their owners, just like the organ cards. */
+.seat-top .hand-backs{transform:translateX(-50%) rotate(180deg)}
+.hand-backs .mini-back{transform-origin:50% 50%}
+.seat-left .mini-back{transform:rotate(90deg)}
+.seat-right .mini-back{transform:rotate(-90deg)}

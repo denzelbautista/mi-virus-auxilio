@@ -1,0 +1,57 @@
+/* Larger rooms use a perimeter with up to three front and two lateral seats. */
+.rival-seats{display:contents}
+.deck-note{color:var(--muted);font-size:12px;line-height:1.6;margin:0 0 18px}
+.seats{grid-template-columns:repeat(4,minmax(0,1fr))}
+.lobby-seat strong{overflow-wrap:anywhere}
+.expanded-game{grid-template-columns:1fr}
+.expanded-game .feed{display:none}
+.expanded-table{min-height:1280px;height:calc(100vh - 88px)}
+.expanded-table .seat{width:220px;height:325px;--organ-width:44px;--back-width:30px;--stack-height:88px}
+.expanded-table .seat .body-organ{width:var(--organ-width)}
+.expanded-table .seat .body-cards{gap:5px;height:var(--stack-height)}
+.expanded-table .seat .player-tag{max-width:220px}
+.expanded-table .seat .player-name{max-width:155px;font-size:14px}
+.expanded-table .seat-top{left:var(--seat-x);top:58px;transform:translateX(-50%);--organ-width:40px;--stack-height:80px}
+.expanded-table .seat-top .player-tag{left:50%;top:0;transform:translateX(-50%)}
+.expanded-table .seat-top .hand-backs{top:76px}
+.expanded-table .seat-top .body-cards{top:133px}
+.expanded-table .seat-left{left:20px;top:calc(330px + var(--seat-row)*360px)}
+.expanded-table .seat-right{right:20px;top:calc(330px + var(--seat-row)*360px)}
+.expanded-table .seat-left .hand-backs,.expanded-table .seat-right .hand-backs{top:82px}
+.expanded-table .seat-left .body-cards{left:calc(var(--back-width) + 24px + var(--stack-height));top:82px}
+.expanded-table .seat-right .body-cards{right:calc(var(--back-width) + 24px + var(--stack-height));top:82px}
+.expanded-table .deck-pile{left:27%;top:320px}
+.expanded-table .table-center{top:40%}
+.expanded-table .own-zone{height:178px;bottom:360px}
+.expanded-table .own-body .body-cards{height:178px}
+.expanded-table .own-player{left:50%;top:-30px;transform:translateX(-50%)}
+.expanded-table .target-banner{left:71%;top:44%;width:185px;display:block}
+@media(max-width:700px){.seats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+/* On narrow screens every rival remains visible in a separate grid cell. */
+@media(max-width:850px){
+  .expanded-table{height:calc(80px + var(--rival-rows)*180px + 720px);min-height:0}
+  .expanded-table .turn-counter{top:46px;left:17px;right:auto}
+  .expanded-table .table-label{max-width:calc(100% - 34px)}
+  .expanded-table .rival-seats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:20px 12px;padding:0 12px;margin-top:80px}
+  .expanded-table .seat{position:relative;left:auto;right:auto;top:auto;transform:none;width:100%;height:160px;--organ-width:28px;--back-width:22px;--stack-height:56px}
+  .expanded-table .seat .player-tag{position:absolute;left:50%;right:auto;top:0;transform:translateX(-50%);max-width:100%;padding:7px;gap:7px}
+  .expanded-table .seat .avatar{height:30px;width:30px;font-size:13px;flex-shrink:0}
+  .expanded-table .seat .player-name{font-size:12px;max-width:135px}
+  .expanded-table .seat .hand-backs{left:50%;right:auto;top:60px;transform:translateX(-50%) rotate(180deg);flex-direction:row;gap:5px}
+  .expanded-table .seat .mini-back{transform:none}
+  .expanded-table .seat .body-cards{left:50%;right:auto;top:101px;transform:translateX(-50%) rotate(180deg);transform-origin:center center;gap:3px}
+  .expanded-table .deck-pile{left:20%;top:calc(80px + var(--rival-rows)*180px + 25px);width:57px}
+  .expanded-table .deck-pile .pile-card{width:57px;height:80px}
+  .expanded-table .deck-pile .pile-label{position:static;transform:none;margin-top:14px}
+  .expanded-table .table-center{left:66%;top:calc(80px + var(--rival-rows)*180px + 70px)}
+  .expanded-table .discard-stack,.expanded-table .pile.discard .empty-pile{width:66px;height:92px}
+  .expanded-table .pile.discard .pile-label{position:static;transform:none;margin-top:12px;font-size:9px}
+  .expanded-table .own-zone{top:calc(80px + var(--rival-rows)*180px + 215px);bottom:auto;height:158px}
+  .expanded-table .own-body .body-cards{height:158px}
+  .expanded-table .own-player{top:-70px}
+  .expanded-table .target-banner{display:none}
+  .expanded-table .hand-card{width:112px}
+  .expanded-table .hand{height:178px}
+  .expanded-table .hand-actions{position:static;flex-direction:row;margin:12px 0 0;min-height:40px}
+  .expanded-table .selection-info{display:none}
+}
