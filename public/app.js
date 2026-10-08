@@ -1,6 +1,8 @@
 import { cardName, status, COLOR_NAMES, ORGAN_NAMES, SPECIAL_NAMES, matches, deckSizeFor } from '/shared/game.js';
 import { cardSVG, backSVG, icon, palette } from '/art.js';
 import '/scene.js';
+import { turnCueSource, updateTurnCue, refreshTurnCue } from '/turn-cue.js';
+import { fitGameViewport } from '/viewport.js';
 
 const app=document.querySelector('#app'), header=document.querySelector('#header'), modal=document.querySelector('#modal');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -35,11 +37,13 @@ function connect(){
       const before=room, event=msg.game?.lastEvent;
       const newEvent=before?.game&&event&&event.sequence!==before.game.lastEvent?.sequence;
       const from=newEvent?eventSource(event):null;
+      const turnFrom=turnCueSource(before);
       room=msg;busy=false;serverOffset=msg.serverTime?msg.serverTime-Date.now():0;
       if(before?.code!==msg.code||before?.game?.turnPlayerId!==msg.game?.turnPlayerId||newEvent||selected&&!msg.game?.hand.some(c=>c.id===selected)){resetSelection();}
       render();
       if(before?.game?.turnPlayerId!==msg.game?.turnPlayerId&&isTurn())tone('turn');
       if(newEvent&&event.card&&from)animateCard(event,from);
+      updateTurnCue(before,room,turnFrom,newEvent&&event.card&&from?620:0);
       if(room.status==='finished'&&winnerShown!==`${room.code}:${event?.sequence}`){winnerShown=`${room.code}:${event?.sequence}`;setTimeout(showWinner,newEvent?650:0);}
       if(before?.status==='finished'&&room.status==='playing'){winnerShown=null;closeModal();}
     }
@@ -59,7 +63,7 @@ function resetSelection(){selected=null;armed=false;firstTransplant=null;discard
 function renderHeader(){
   header.innerHTML=`<button class="brand" data-do="home" aria-label="VIRUS! El laboratorio"><span class="brand-mark">${icon('flask')}</span><span><span class="brand-name">VIRUS<em>!</em></span><span class="brand-sub">EL LABORATORIO</span></span></button><div class="header-tools">${room?`<button class="room-badge" data-do="invite" aria-label="Invitar a la sala ${esc(room.code)}"><span>${room.practice?'PRÁCTICA':'SALA'}</span><b>${room.practice?'CON BOTS':esc(room.code)}</b>${room.practice?'':icon('copy')}</button>`:`<span class="header-status"><i class="dot ${online?'':'offline'}"></i>${online?'Laboratorio en línea':'Conectando'}</span>`}<button class="icon-btn" data-do="sound" title="${sound?'Silenciar':'Activar sonido'}" aria-label="${sound?'Silenciar':'Activar sonido'}">${icon(sound?'sound':'muted')}</button><button class="icon-btn" data-do="rules" title="Cómo jugar" aria-label="Cómo jugar">${icon('help')}</button>${room?`<button class="icon-btn" data-do="leave" title="Salir de la sala" aria-label="Salir de la sala">${icon('exit')}</button>`:`<button class="text-btn" data-do="catalog">Las cartas ${icon('arrow')}</button>`}</div>`;
 }
-function render(){renderHeader();if(!room)renderLanding();else if(room.status==='lobby')renderLobby();else renderGame();}
+function render(){renderHeader();if(!room)renderLanding();else if(room.status==='lobby')renderLobby();else renderGame();refreshTurnCue(room);if(!room||room.status==='lobby')fitGameViewport();}
 function renderLanding(){
   const savedName=localStorage.getItem('virus:name')||'', code=new URLSearchParams(location.search).get('sala')||'';
   app.innerHTML=`<section class="landing"><div class="landing-copy"><div class="eyebrow">Un pequeño caos. Una gran partida.</div><h1>La mejor cura<br>es <span>jugar sucio.</span></h1><p class="intro">Construye tu cuerpo. Contagia a tus amigos.<br>El primero con cuatro órganos sanos se lleva la gloria.</p><form class="room-form" id="room-form"><div class="tabs"><button type="button" class="tab ${formMode==='create'?'active':''}" data-do="tab-create">Crear una sala</button><button type="button" class="tab ${formMode==='join'?'active':''}" data-do="tab-join">Unirme a una sala</button></div><label class="field">Tu nombre en el laboratorio<input id="player-name" name="name" autocomplete="nickname" maxlength="24" placeholder="¿Cómo te llamamos?" value="${esc(savedName)}" required/></label>${formMode==='create'?`<label class="field">Nombre de la sala <span style="opacity:.5">· opcional</span><input name="roomName" maxlength="24" placeholder="Los sospechosos de siempre"/></label><label class="field">Plazas de la sala<select name="maxPlayers" id="room-capacity" class="select">${Array.from({length:capacity-1},(_,i)=>i+2).map(n=>`<option value="${n}" ${n===roomCapacity?'selected':''}>${n} jugadores</option>`).join('')}</select></label><p class="deck-note">El mazo se ajusta a quienes jueguen: desde cinco participantes añadimos cartas de los mismos tipos y colores.</p>`:`<label class="field">Código de invitación<input name="code" maxlength="6" placeholder="Ej. LAB234" value="${esc(code)}" style="text-transform:uppercase;letter-spacing:3px" required/></label>`}<button id="submit-room" type="submit" class="primary full">${icon(formMode==='create'?'flask':'users')}${formMode==='create'?'Abrir el laboratorio':'Entrar al laboratorio'}${icon('arrow')}</button><p id="form-error" class="form-error" role="alert"></p></form><button class="practice-btn" data-do="practice">${icon('spark')}¿Vienes solo? <span>Practica con bots</span> ${icon('arrow')}</button>${recent.length?`<button class="practice-btn" data-do="resume">${icon('link')}Reanudar sala <span>${esc(recent[0].code)}</span></button>`:''}</div><div class="hero"><div class="hero-orbit"></div><span class="hero-dot"></span><span class="hero-plus">+</span><div class="hero-tag">${icon('users')}2–${capacity} jugadores · una dosis de caos</div><div class="hero-cards"><div class="hero-card">${cardSVG({id:'hero1',type:'organ',color:'red'})}</div><div class="hero-card">${cardSVG({id:'hero2',type:'medicine',color:'blue'})}</div><div class="hero-card">${cardSVG({id:'hero3',type:'virus',color:'green'})}</div></div><div class="hero-tag bottom">${icon('shield')}Tu amistad no está inmunizada.</div><div class="hero-caption">68–${deckSizeFor(capacity)} CARTAS. INFINITAS MALAS INTENCIONES.</div></div></section><footer class="site-footer"><div class="features"><span class="feature">${icon('users')}Salas privadas</span><span class="feature">${icon('link')}En tiempo real</span><span class="feature">${icon('shield')}Cada partida, su mundo</span></div><span>Una adaptación independiente · Arte original</span></footer>`;
@@ -119,6 +123,7 @@ function renderGame(){
   const until=disconnected?member.offlineSince+(room.disconnectTimeoutMs||300000):0;
   const turnText=room.status==='finished'?'Partida terminada':disconnected?`${esc(turn.name)} se desconectó · <span class="disconnect-count" data-offline-until="${until}"></span> para volver`:own.skip&&turn?.id===own.id?'Repones tu mano · pierdes este turno':myTurn?'Tu turno. Haz de las tuyas.':`Turno de ${esc(turn?.name||'tu rival')}`;
   app.innerHTML=`<div class="game-layout ${expanded?'expanded-game':''}">
+    <div class="game-viewport">
     <section class="table ${expanded?'expanded-table':''}" style="--rival-rows:${Math.ceil(ordered.length/2)}" aria-label="Mesa de juego">
       <div class="table-label"><i class="dot"></i>${room.practice?'MODO PRÁCTICA':'PARTIDA PRIVADA'} <span> / </span><b>${esc(room.roomName)}</b></div>
       <div class="turn-counter">RONDA <b>${String(g.round).padStart(2,'0')}</b> · ${g.players.length} JUGADORES</div>
@@ -145,6 +150,7 @@ function renderGame(){
         <p class="hand-hint">${esc(hint)}</p>
       </div>
     </section>
+    </div>
     <aside class="feed">
       <div class="feed-title">En el laboratorio <span>${g.players.length} JUGADORES</span></div>
       <div class="objective"><span class="inline-icon">${icon('heart')}</span><strong>Un cuerpo sano. Una victoria.</strong><p>Reúne cuatro órganos diferentes, libres de virus, vacunados o inmunizados.</p><div class="progress">${Array.from({length:4},(_,i)=>`<span class="${i<own.healthy?'done':''}"></span>`).join('')}</div></div>
@@ -154,6 +160,8 @@ function renderGame(){
     </aside>
   </div>`;
   updateCountdowns();
+  fitGameViewport();
+  refreshTurnCue(room);
 }
 
 function playSelected(){
@@ -178,12 +186,14 @@ function eventSource(e){const el=e.actorId===room.meId?document.querySelector(`[
 function animateCard(e,from){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const target=!e.discard&&e.card.type!=='special'?(document.querySelector(`[data-organ="${e.targetOrganId||e.card.id}"]`)||document.querySelector(`[data-player-tag="${e.targetPlayerId}"]`)):document.querySelector('[data-pile="discard"]');
-  if(!target)return;const to=target.getBoundingClientRect(),fly=document.createElement('div');fly.className='flight-card';fly.innerHTML=cardSVG(e.card);fly.style.left=`${from.x+from.width/2-50}px`;fly.style.top=`${from.y+from.height/2-70}px`;document.body.append(fly);
+  if(!target)return;
+  const tableScale=Number(target.closest('.game-viewport')?.style.getPropertyValue('--board-scale'))||1;
+  const to=target.getBoundingClientRect(),fly=document.createElement('div');fly.className='flight-card';fly.innerHTML=cardSVG(e.card);fly.style.width=`${100*tableScale}px`;fly.style.left=`${from.x+from.width/2-50*tableScale}px`;fly.style.top=`${from.y+from.height/2-70*tableScale}px`;document.body.append(fly);
   const dx=to.x+to.width/2-(from.x+from.width/2),dy=to.y+to.height/2-(from.y+from.height/2),scale=target.offsetWidth/100;
   const seat=target.closest('.seat'),layer=target.querySelector('.discard-layer:last-child');
   const angle=layer?parseFloat(layer.style.getPropertyValue('--rotation')):seat?.classList.contains('seat-left')?90:seat?.classList.contains('seat-right')?-90:seat?.classList.contains('seat-top')?180:0;
   const incline=0;
-  const anim=fly.animate([{transform:'perspective(800px) translate3d(0,0,0) rotateX(0deg) rotateZ(-5deg) scale(1)'},{transform:`perspective(800px) translate3d(${dx*.5}px,${dy*.5-85}px,140px) rotateX(-30deg) rotateZ(${angle*.4+12}deg) scale(1.25)`,offset:.5},{transform:`perspective(800px) translate3d(${dx}px,${dy}px,0) rotateX(${incline}deg) rotateZ(${angle}deg) scale(${scale})`}],{duration:620,easing:'cubic-bezier(.22,.61,.36,1)'});
+  const anim=fly.animate([{transform:'perspective(800px) translate3d(0,0,0) rotateX(0deg) rotateZ(-5deg) scale(1)'},{transform:`perspective(800px) translate3d(${dx*.5}px,${dy*.5-85*tableScale}px,${140*tableScale}px) rotateX(-30deg) rotateZ(${angle*.4+12}deg) scale(1.25)`,offset:.5},{transform:`perspective(800px) translate3d(${dx}px,${dy}px,0) rotateX(${incline}deg) rotateZ(${angle}deg) scale(${scale})`}],{duration:620,easing:'cubic-bezier(.22,.61,.36,1)'});
   anim.finished.then(()=>{fly.remove();target.classList.add('body-pop');setTimeout(()=>target.classList.remove('body-pop'),500);});
 }
 function openModal(html){modal.innerHTML=html;if(!modal.open)modal.showModal();}

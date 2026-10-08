@@ -1,5 +1,25 @@
+# Dependencias
 node_modules/
+
+# Datos persistentes y archivos temporales de la aplicación
 data/
-.env
 tmp/
 test-results/
+
+# Configuración y secretos locales
+.env
+.env.*
+!.env.example
+
+# Sistema operativo y editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# Registros y cobertura
+*.log
+coverage/
+
+# Capturas de referencia locales
+Captura de pantalla *.png

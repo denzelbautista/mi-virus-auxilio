@@ -1,0 +1,8 @@
+.turn-transfer{position:fixed;inset:0;z-index:90;pointer-events:none;overflow:hidden;filter:drop-shadow(0 0 6px #d7f68b70)}
+.turn-transfer-trail{fill:none;stroke:#d7f68b;stroke-width:2;stroke-opacity:.18;stroke-linecap:round}
+.turn-transfer-arrow{fill:none;stroke:#e0ffa4;stroke-width:3;stroke-linecap:round;stroke-linejoin:round}
+.player-tag.turn-arrival{animation:turnArrival 2s ease-out both;animation-delay:var(--turn-elapsed,0ms)}
+.player-tag.turn-arrival .avatar:after{content:'';position:absolute;inset:-6px;border:2px solid #d7f68b;border-radius:inherit;pointer-events:none;animation:turnAvatarRing 2s ease-out both;animation-delay:var(--turn-elapsed,0ms)}
+@keyframes turnArrival{0%,40%{border-color:#d7f68b;box-shadow:0 0 0 4px #d7f68b20,0 0 26px #d7f68b50}20%,60%{border-color:#e8ffb8;box-shadow:0 0 0 7px #d7f68b08,0 0 34px #d7f68b30}100%{border-color:#d7f68b55;box-shadow:0 0 30px #d7f68b12}}
+@keyframes turnAvatarRing{0%{opacity:0;transform:scale(.85)}15%,45%{opacity:.85;transform:scale(1)}30%,60%{opacity:.35;transform:scale(1.12)}100%{opacity:0;transform:scale(1.2)}}
+@media(prefers-reduced-motion:reduce){.turn-transfer{display:none}.player-tag.turn-arrival{animation:none;border-color:#d7f68b;box-shadow:0 0 0 3px #d7f68b24,0 0 20px #d7f68b30}.player-tag.turn-arrival .avatar:after{display:none}}

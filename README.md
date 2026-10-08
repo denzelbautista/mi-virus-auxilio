@@ -41,7 +41,7 @@ Para 5 a 8 participantes, esta adaptación usa una variante con mazo ampliado. S
 
 A ocho, la distribución es exactamente el doble: 42 órganos, 34 virus, 40 medicinas y 20 tratamientos. El tamaño depende de quienes comienzan la partida, no de las plazas libres. El mazo queda fijo durante la partida, incluso si hay eliminaciones; una revancha recalcula el mazo para los participantes que queden. Se conservan manos de tres cartas y la victoria con cuatro órganos sanos. El reglamento comercial indica 2 a 6 jugadores; el ajuste del mazo y la opción de ocho son reglas de esta adaptación. Las pruebas de partidas completas verifican conservación y victorias; el equilibrio entre jugadores humanos puede afinarse con partidas reales.
 
-![Mesa ampliada con ocho jugadores](docs/mesa-ocho-jugadores.jpg)
+![Mesa ampliada con ocho jugadores, ajustada a HD+](docs/mesa-adaptable-hd.png)
 
 ## Salas, privacidad y reconexión
 
@@ -64,7 +64,7 @@ El sistema está diseñado para **un proceso de servidor** con múltiples salas.
 | `STATE_FILE` | `data/rooms.json` | Archivo persistente privado |
 | `DISCONNECT_TIMEOUT_MS` | `300000` | Plazo de ausencia antes de la eliminación (5 minutos) |
 
-Las salas conservan la capacidad con la que fueron creadas, incluidas las partidas guardadas de cuatro plazas. El selector de nuevas salas ofrece de 2 a `MAX_PLAYERS` plazas (4 preseleccionadas). Las mesas de 5 a 8 jugadores distribuyen hasta tres rivales al frente y dos en cada lateral; en pantallas estrechas, los rivales aparecen en una cuadrícula y la mesa permite desplazamiento vertical.
+Las salas conservan la capacidad con la que fueron creadas, incluidas las partidas guardadas de cuatro plazas. El selector de nuevas salas ofrece de 2 a `MAX_PLAYERS` plazas (4 preseleccionadas). Las mesas de 5 a 8 jugadores distribuyen hasta tres rivales al frente y dos en cada lateral; en pantallas estrechas, los rivales aparecen en una cuadrícula. Durante la partida, la mesa completa se ajusta al espacio disponible bajo el encabezado, sin desplazamiento de la página. Las cartas conservan sus proporciones y el ajuste se recalcula al cambiar el tamaño de la ventana o la orientación. Los detalles de órganos y las reglas siguen disponibles en sus ventanas habituales.
 
 ## Pruebas
 
@@ -86,7 +86,7 @@ Este repositorio incluye la configuración de despliegue, pero no está publicad
 
 ## Estructura
 
-`shared/game.js`: reglas puras, acciones válidas y vista privada por jugador. `server/index.js`: salas, sesiones, WebSocket, bots y persistencia. `public/app.js`: interfaz y animaciones. `public/art.js`: ilustraciones y cartas SVG. `public/scene.js`: fondo de Three.js. `public/style.css`: diseño adaptable y movimiento reducido. `public/expanded.css`: salas y mesa ampliada hasta ocho, con distribución adaptable. `public/table.css`: mesa sin distorsión de perspectiva, manos laterales en columna, mano frontal en fila, órganos con virus y medicinas superpuestos y descarte apilado. Los nombres se ajustan en varias líneas y las pantallas estrechas permiten desplazamiento vertical para conservar el espacio de cada jugador.
+`shared/game.js`: reglas puras, acciones válidas y vista privada por jugador. `server/index.js`: salas, sesiones, WebSocket, bots y persistencia. `public/app.js`: interfaz y animaciones. `public/art.js`: ilustraciones y cartas SVG. `public/scene.js`: fondo de Three.js. `public/style.css`: diseño adaptable y movimiento reducido. `public/expanded.css`: salas y mesa ampliada hasta ocho, con distribución adaptable. `public/table.css`: mesa sin distorsión de perspectiva, manos laterales en columna, mano frontal en fila, órganos con virus y medicinas superpuestos y descarte apilado. `public/viewport.js` y `public/viewport.css`: ajuste proporcional de la mesa al espacio real del navegador, con separación de nombres y controles en pantallas pequeñas. `public/turn-cue.js` y `public/turn-cue.css`: flechas y resalte breve al cambiar el turno.
 
 ## Referencias
 

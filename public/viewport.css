@@ -1,0 +1,45 @@
+/* Keep the original board composition; scale its coordinates as one unit. */
+body.in-game{height:100vh;height:100dvh;min-height:0;overflow:hidden;display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom,0px)}
+.in-game #header{width:100%;flex-shrink:0}
+.in-game #app{width:100%;flex:1;min-height:0}
+.in-game .game-layout{height:100%;min-height:0;grid-template-columns:minmax(0,1fr) 250px}
+.in-game .expanded-game{grid-template-columns:minmax(0,1fr)}
+.game-viewport{position:relative;min-width:0;min-height:0;height:100%;overflow:hidden;overflow:clip}
+.game-viewport[data-fitted]>.table{position:absolute;inset:0 auto auto 0;width:var(--board-width);height:var(--board-height);min-height:0;transform:scale(var(--board-scale));transform-origin:0 0}
+.in-game .feed{height:100%;min-height:0;overflow:hidden}
+.in-game .log{min-height:0}
+.game-viewport[data-fitted] .table .player-name{font-size:clamp(15px,calc(11px / var(--board-scale)),20px)}
+.game-viewport[data-fitted] .player-tag{transition:background-color .3s,border-color .3s,box-shadow .3s}
+.game-viewport[data-fitted] .table-label,.game-viewport[data-fitted] .turn-counter,.game-viewport[data-fitted] .pile-label{font-size:clamp(12px,calc(10px / var(--board-scale)),20px)}
+.game-viewport[data-fitted] .hand-actions button{font-size:clamp(13px,calc(11px / var(--board-scale)),20px)}
+@media(min-width:851px){.game-viewport .expanded-table .own-player{top:-46px}}
+@media(max-width:1200px){.in-game .game-layout{grid-template-columns:minmax(0,1fr)}}
+@media(max-width:700px){
+  .game-viewport[data-fitted] .table-label{max-width:calc(100% - 34px)}
+  .game-viewport[data-fitted] .turn-counter{top:46px;left:17px;right:auto}
+  .game-viewport[data-fitted] .table:not(.expanded-table) .seat-top{top:80px}
+  .game-viewport[data-fitted] .table:not(.expanded-table) .deck-pile{top:105px}
+  .game-viewport[data-fitted] .table:not(.expanded-table) .seat .player-name{font-size:15px}
+  .game-viewport[data-fitted] .table:not(.expanded-table) .seat .hand-backs{top:110px}
+  .game-viewport[data-fitted] .table:not(.expanded-table) .seat-left .body-cards,.game-viewport[data-fitted] .table:not(.expanded-table) .seat-right .body-cards{top:110px}
+  .game-viewport[data-fitted] .table:not(.expanded-table) .seat-top .body-cards{top:175px}
+  .game-viewport[data-fitted] .table:not(.expanded-table) .own-player{top:-70px}
+  .game-viewport[data-fitted] .table:not(.expanded-table) .own-zone{bottom:calc(360px + max(12px,36px / var(--board-scale) - 60px))}
+  .game-viewport[data-fitted] .hand-actions{margin-top:36px}
+  .game-viewport[data-fitted] .hand-actions button{min-height:calc(36px / var(--board-scale))}
+}
+/* Retain legible names in the existing two-column phone arrangement. */
+@media(max-width:850px){
+  .game-viewport[data-fitted] .expanded-table .seat .player-name{font-size:20px;max-width:270px}
+  .game-viewport[data-fitted] .expanded-table .seat .avatar{width:44px;height:44px;font-size:19px}
+  .game-viewport[data-fitted] .expanded-table .seat .hand-backs{top:80px}
+  .game-viewport[data-fitted] .expanded-table .seat .body-cards{top:120px}
+  .game-viewport[data-fitted] .expanded-table .own-player .player-name{font-size:20px;max-width:270px}
+  .game-viewport[data-fitted] .expanded-table .own-player .avatar{width:44px;height:44px;font-size:19px}
+  .game-viewport[data-fitted] .expanded-table .own-body{transform:translateY(-72px)}
+  .game-viewport[data-fitted] .expanded-table .own-zone{top:calc(80px + var(--rival-rows)*180px + 215px - max(0px,36px / var(--board-scale) - 66px))}
+  .game-viewport[data-fitted] .expanded-table .turn-pill{font-size:20px;top:-78px}
+  .game-viewport[data-fitted] .expanded-table .hand-actions button{min-height:calc(36px / var(--board-scale))}
+  .game-viewport[data-fitted] .expanded-table .hand-actions{margin-top:36px}
+  .game-viewport[data-fitted] .expanded-table .hand-hint{font-size:18px}
+}
