@@ -1,24 +1,11 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { resolve } from 'node:path';
-import WebSocket from 'ws';
 import { newGame } from '../shared/game.js';
 
-function client(url){
-  const ws=new WebSocket(url),messages=[],waiters=[];
-  ws.on('message',raw=>{const m=JSON.parse(raw);messages.push(m);for(const w of [...waiters])if(w.match(m)){waiters.splice(waiters.indexOf(w),1);clearTimeout(w.timer);w.resolve(m);}});
-  const next=(match,timeout=6000)=>new Promise((resolve,reject)=>{const w={match,resolve,timer:setTimeout(()=>{waiters.splice(waiters.indexOf(w),1);reject(new Error('Timed out waiting for server message'));},timeout)};waiters.push(w);});
-  return {ws,messages,next,send(m){ws.send(JSON.stringify(m));},state(){return messages.findLast(m=>m.type==='state');},session(){return messages.findLast(m=>m.type==='session');}};
-}
-async function start(file,timeout=300_000){
-  const child=spawn(process.execPath,['server/index.js'],{cwd:resolve('.'),env:{...process.env,PORT:'0',HOST:'127.0.0.1',STATE_FILE:file,DISCONNECT_TIMEOUT_MS:String(timeout),MAX_PLAYERS:'8'},stdio:['ignore','pipe','pipe']});
-  let output='';const port=await new Promise((resolve,reject)=>{const timer=setTimeout(()=>reject(new Error('Server did not start: '+output)),5000);child.stdout.on('data',raw=>{output+=raw;const m=output.match(/localhost:(\d+)/);if(m){clearTimeout(timer);resolve(Number(m[1]));}});child.stderr.on('data',raw=>output+=raw);child.on('exit',code=>{clearTimeout(timer);reject(new Error('Server exited: '+code+' '+output));});});
-  return {child,port,async stop(){if(child.exitCode!==null)return;const exited=once(child,'exit');child.kill('SIGTERM');await exited;}};
-}
+import {client,start} from './helpers.js';
 
 test('Real network: 4-player rooms, isolation, privacy, invalid moves, reconnection and restart',async t=>{
   const dir=mkdtempSync(`${tmpdir()}/virus-tests-`),file=`${dir}/rooms.json`,clients=[];

@@ -6,6 +6,8 @@ services:
     environment:
       MAX_PLAYERS: "8"
       STATE_FILE: /app/data/rooms.json
+      DB_FILE: /app/data/virus.sqlite
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
     volumes:
       - virus-data:/app/data
     restart: unless-stopped

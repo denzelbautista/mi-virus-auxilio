@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administración · VIRUS!</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css"><link rel="stylesheet" href="/admin.css">
+</head>
+<body class="admin-page">
+  <header id="header"><a class="admin-brand" href="/">VIRUS! <span>EL LABORATORIO</span></a><div><a class="secondary" href="/">Ir al juego</a><button class="text-btn" id="logout" hidden>Cerrar sesión</button></div></header>
+  <main class="admin-main">
+    <section id="login-section" class="admin-card login-card">
+      <div class="eyebrow">SOLO ADMINISTRACIÓN</div><h1>Tu laboratorio,<br>en control.</h1>
+      <p>Crea accesos y salas. Sigue cada partida.</p>
+      <form id="login-form"><label class="field">Contraseña de administrador<input name="password" type="password" autocomplete="current-password" required></label><button class="primary full">Entrar al panel</button></form>
+    </section>
+    <div id="dashboard" hidden>
+      <div class="admin-title"><div><div class="eyebrow">CENTRO DE CONTROL</div><h1>El laboratorio</h1></div><span id="updated" class="muted" aria-live="polite"></span></div>
+      <div id="metrics" class="admin-metrics"></div>
+      <div class="admin-forms">
+        <section class="admin-card"><h2>Preparar una sala</h2><p>Se genera un acceso individual por plaza. Cada acceso admite un jugador en esa sala.</p>
+          <form id="create-room"><label class="field">Nombre de la sala<input name="name" maxlength="24" placeholder="Noche de contagio" required></label>
+            <div class="admin-pair"><label class="field">Jugadores<select name="capacity" id="admin-capacity" aria-label="Jugadores"></select></label><label class="field">Partidas incluidas<select name="maxGames" aria-label="Partidas incluidas"><option value="2">1 partida + 1 revancha</option><option value="1">Solo 1 partida</option><option value="0">Ilimitadas durante la vigencia</option></select></label></div>
+            <label class="field">Accesos válidos hasta<input name="expiresAt" type="datetime-local" required></label><button class="primary full">Crear sala y accesos</button>
+          </form>
+        </section>
+        <section class="admin-card"><h2>Generar un código</h2><p>El temporal permite jugar y repetir partidas durante su vigencia. Su límite cuenta salas distintas entre todos quienes usen el código.</p>
+          <form id="create-code"><label class="field">Referencia<input name="label" maxlength="80" placeholder="Amigos del viernes" required></label>
+            <div class="admin-pair"><label class="field">Tipo de acceso<select name="kind" id="code-kind" aria-label="Tipo de acceso"><option value="limited">Temporal</option><option value="full">Total</option></select></label><label class="field" id="limit-field">Salas distintas<select name="maxRooms" aria-label="Salas distintas"><option value="1">Máximo 1 sala</option><option value="2">Máximo 2 salas</option></select></label></div>
+            <label class="field">Válido hasta<input name="expiresAt" type="datetime-local" required></label><p id="full-note" class="admin-note" hidden>Acceso total: salas, práctica y revanchas ilimitadas durante la vigencia. Consérvalo para ti.</p><button class="primary full">Generar código de acceso</button>
+          </form>
+        </section>
+      </div>
+      <section class="admin-card">
+        <div class="section-heading"><div><h2>Códigos activos</h2><p>Actualización automática cada cinco segundos.</p></div><button class="secondary" id="refresh">Actualizar</button></div>
+        <p>Abre un recuadro para consultar y copiar sus accesos. Los individuales se agrupan por sala; los temporales y totales aparecen por separado.</p><div id="active-codes" class="room-grid"></div>
+      </section>
+      <section class="admin-card"><h2>Todos los accesos</h2><p>Consulta el estado y la vigencia de los accesos generados.</p><div class="table-scroll"><table><thead><tr><th>Referencia / código</th><th>Acceso</th><th>Salas usadas</th><th>Vigencia</th><th>Estado</th></tr></thead><tbody id="codes"></tbody></table></div><nav class="access-pagination" aria-label="Páginas de accesos"><span id="codes-page" class="muted" aria-live="polite"></span><div class="history-nav"><button id="codes-previous" class="secondary">Anterior</button><button id="codes-next" class="secondary">Siguiente</button></div></nav></section>
+      <section class="admin-card"><div class="section-heading"><div><h2>Historial de partidas</h2><p>Incluye resultado, participantes y duración de cada partida, también las revanchas.</p></div><div class="history-nav"><button id="previous" class="secondary">Anterior</button><button id="next" class="secondary">Siguiente</button></div></div><div class="table-scroll"><table><thead><tr><th>Sala / partida</th><th>Participantes</th><th>Inicio</th><th>Duración</th><th>Resultado</th></tr></thead><tbody id="history"></tbody></table></div></section>
+    </div>
+    <p id="admin-error" role="alert"></p>
+  </main>
+  <dialog id="admin-modal" aria-labelledby="codes-modal-title"></dialog>
+  <dialog id="revoke-modal" aria-labelledby="revoke-title"><div class="modal-head"><h2 id="revoke-title">¿Revocar este acceso?</h2><button type="button" class="icon-btn" data-close-revoke aria-label="Cerrar confirmación">×</button></div><p id="revoke-label" class="revoke-label"></p><p id="revoke-description" class="modal-copy">Se bloquearán nuevas entradas y revanchas con este acceso. La partida actual podrá terminar.</p><p id="revoke-error" class="form-error" role="alert"></p><div class="modal-actions"><button type="button" class="secondary" data-close-revoke autofocus>Cancelar</button><button type="button" class="primary danger" id="confirm-revoke">Revocar acceso</button></div></dialog>
+  <script type="module" src="/admin.js"></script>
+</body>
+</html>

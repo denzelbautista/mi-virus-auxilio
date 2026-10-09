@@ -1,0 +1,10 @@
+.access-form h2{font-size:23px;letter-spacing:-.7px;margin:12px 0}.access-form p{font-size:12px;color:var(--muted);line-height:1.7}
+.access-summary{background:#d7f68b0b;border:1px solid #d7f68b30;border-radius:14px;padding:15px 18px;margin-bottom:14px;font-size:12px;line-height:1.7}
+.access-summary strong,.access-summary span{display:block}.access-summary span{color:var(--muted);font-size:11px}.access-summary button{background:none;color:var(--lime);padding:8px 0 0;font-size:11px}
+.pilot-status{position:absolute;top:calc(100% + 6px);left:0;width:190px;max-width:230px;color:var(--muted);font-size:12px;line-height:1.45;pointer-events:none}
+.pilot-status strong,.pilot-status span{display:block}.pilot-status b{font-variant-numeric:tabular-nums}.pilot-status.automatic{color:#f1d095}.pilot-status strong{font-size:inherit}
+.expanded-table .pilot-status{left:50%;transform:translateX(-50%);text-align:center}.game-viewport[data-fitted] .pilot-status{font-size:clamp(12px,calc(11px / var(--board-scale)),20px)}
+.rematch-box{padding:16px;border:1px solid var(--line);border-radius:12px;margin-top:20px}.rematch-box h3{margin:0 0 8px}.rematch-box ul{list-style:none;padding:0;font-size:12px;color:var(--muted);line-height:2}
+.site-footer a{color:var(--muted)}[hidden]{display:none!important}
+@media(max-width:700px){.pilot-status{left:50%;transform:translateX(-50%);text-align:center}.game-viewport[data-fitted] .table:not(.expanded-table) .own-player{top:-100px}}
+@media(max-width:850px){.game-viewport[data-fitted] .expanded-table .own-player{top:-140px;left:calc(50% - 35px)}.game-viewport[data-fitted] .expanded-table .own-player .player-tag{max-width:200px}}
