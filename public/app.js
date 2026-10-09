@@ -30,7 +30,7 @@ function connect(){
     const msg=JSON.parse(e.data);
     if(msg.type==='hello'){capacity=msg.maxPlayers;roomCapacity=Math.min(roomCapacity,capacity);if(!room)renderLanding();return;}
     if(msg.type==='session'){session={code:msg.code,token:msg.token};recent=recent.filter(s=>s.code!==msg.code);recent.unshift(session);store();return;}
-    if(msg.type==='sessionExpired'||msg.type==='eliminated'){recent=recent.filter(s=>s.code!==session?.code);session=null;room=null;busy=false;resetSelection();closeModal();store();render();notify(msg.message||'Esta sala ya no está disponible. Puedes crear otra.',true);return;}
+    if(msg.type==='sessionExpired'||msg.type==='eliminated'||msg.type==='rematchExcluded'){recent=recent.filter(s=>s.code!==session?.code);session=null;room=null;busy=false;resetSelection();closeModal();store();render();notify(msg.message||'Esta sala ya no está disponible. Puedes crear otra.',msg.type!=='rematchExcluded');return;}
     if(msg.type==='left'){session=null;room=null;busy=false;resetSelection();store();closeModal();render();return;}
     if(msg.type==='error'){busy=false;notify(msg.message,true);if(room)render();else{const el=document.querySelector('#form-error');if(el)el.textContent=msg.message;const b=document.querySelector('#submit-room');if(b)b.disabled=false;}return;}
     if(msg.type==='state'){
@@ -45,6 +45,7 @@ function connect(){
       if(newEvent&&event.card&&from)animateCard(event,from);
       updateTurnCue(before,room,turnFrom,newEvent&&event.card&&from?620:0);
       if(room.status==='finished'&&winnerShown!==`${room.code}:${event?.sequence}`){winnerShown=`${room.code}:${event?.sequence}`;setTimeout(showWinner,newEvent?650:0);}
+      if(room.status==='finished'&&(room.rematch?.status==='pending'&&before?.rematch?.id!==room.rematch.id||modal.open&&modal.dataset.view==='winner'))showWinner();
       if(before?.status==='finished'&&room.status==='playing'){winnerShown=null;closeModal();}
     }
   });
@@ -83,6 +84,12 @@ function bodyCards(p,own=false){
   }).join('');
 }
 function playerTag(p,idx){const member=room.members.find(m=>m.id===p.id),active=room.game.turnPlayerId===p.id&&room.status==='playing';return `<div class="player-tag ${active?'active':''} ${!member?.connected?'absent':''}" data-player-tag="${p.id}" title="${esc(p.name)}${!member?.connected?' · Desconectado':''}" aria-label="${esc(p.name)}${p.id===room.meId?', tú':''}${active?', turno actual':''}${!member?.connected?', desconectado':''}">${avatar(p,idx)}<div class="player-name">${esc(p.name)}</div></div>`;}
+function pilotStatus(){
+  if(room.status!=='playing')return '';
+  const own=room.members.find(m=>m.id===room.meId);
+  if(own?.autopilot){const remaining=Math.max(0,room.autoTurnLimit-own.autoTurns);return `<div class="pilot-status automatic" role="status"><strong>Piloto automático</strong><span>Te queda${remaining===1?'':'n'} ${remaining} turno${remaining===1?'':'s'}</span></div>`;}
+  return room.turnDeadline?`<div class="pilot-status"><span>Piloto automático en <b data-countdown-until="${room.turnDeadline}"></b></span></div>`:'';
+}
 function discardPile(g) {
   const cards=g.discardPreview || (g.discardTop?[g.discardTop]:[]);
   const angles=[-13,16,-9,11,-18,5];
@@ -92,8 +99,8 @@ function discardPile(g) {
   }).join('')}</div>`:`<div class="empty-pile" data-pile="discard">${icon('trash')}</div>`}<div class="pile-label">DESCARTE <b>${g.discardCount}</b></div></div>`;
 }
 function updateCountdowns() {
-  document.querySelectorAll('[data-offline-until]').forEach(el=>{
-    const remaining=Math.max(0,Math.ceil((Number(el.dataset.offlineUntil)-Date.now()-serverOffset)/1000));
+  document.querySelectorAll('[data-offline-until], [data-countdown-until]').forEach(el=>{
+    const remaining=Math.max(0,Math.ceil((Number(el.dataset.offlineUntil||el.dataset.countdownUntil)-Date.now()-serverOffset)/1000));
     el.textContent=`${Math.floor(remaining/60)}:${String(remaining%60).padStart(2,'0')}`;
   });
 }
@@ -119,9 +126,8 @@ function renderGame(){
     </section>`;
   }).join('');
   const hint=discarding?'Elige las cartas que quieres cambiar. Esto consume tu turno.':c?(armed?'Elige un órgano resaltado en la mesa.':'Otro clic en la carta para jugarla. También puedes usar el botón.'):'Un clic para seleccionar. Otro para jugar. Que empiece el caos.';
-  const member=room.members.find(m=>m.id===turn?.id), disconnected=room.status==='playing'&&member&&!member.connected;
-  const until=disconnected?member.offlineSince+(room.disconnectTimeoutMs||300000):0;
-  const turnText=room.status==='finished'?'Partida terminada':disconnected?`${esc(turn.name)} se desconectó · <span class="disconnect-count" data-offline-until="${until}"></span> para volver`:own.skip&&turn?.id===own.id?'Repones tu mano · pierdes este turno':myTurn?'Tu turno. Haz de las tuyas.':`Turno de ${esc(turn?.name||'tu rival')}`;
+  const member=room.members.find(m=>m.id===turn?.id), ownMember=room.members.find(m=>m.id===room.meId), disconnected=room.status==='playing'&&member&&!member.connected;
+  const turnText=room.status==='finished'?'Partida terminada':disconnected?`${esc(turn.name)} se desconectó`:own.skip&&turn?.id===own.id?'Repones tu mano · pierdes este turno':myTurn?'Tu turno. Haz de las tuyas.':`Turno de ${esc(turn?.name||'tu rival')}`;
   app.innerHTML=`<div class="game-layout ${expanded?'expanded-game':''}">
     <div class="game-viewport">
     <section class="table ${expanded?'expanded-table':''}" style="--rival-rows:${Math.ceil(ordered.length/2)}" aria-label="Mesa de juego">
@@ -133,19 +139,19 @@ function renderGame(){
       <div class="table-center">${discardPile(g)}</div>
       ${armed?`<div class="target-banner">${firstTransplant?'Ahora elige el segundo órgano.':c?.special==='transplant'?'Elige el primer órgano del intercambio.':'Elige dónde jugar tu carta.'}<small>Los destinos válidos brillan en verde.</small></div>`:''}
       <div class="own-zone">
-        <div class="own-player">${playerTag(own,myIndex)}</div>
+        <div class="own-player">${playerTag(own,myIndex)}${pilotStatus()}</div>
         <div class="own-body"><span class="body-title">TU CUERPO</span><div class="body-cards" data-own-body>${bodyCards(own,true)}</div></div>
       </div>
       <div class="hand-zone">
         <div class="turn-pill ${myTurn?'':'waiting'} ${disconnected?'disconnected':''}">${icon(myTurn?'spark':'users')}${turnText}</div>
         ${c?`<div class="selection-info"><small>${c.type==='special'?'TRATAMIENTO':COLOR_NAMES[c.color].toUpperCase()}</small><strong>${esc(cardName(c))}</strong><p>${esc(descriptions[c.special||c.type])}</p></div>`:''}
         <div class="hand" aria-label="Tus cartas">${g.hand.map((card,i)=>`<button class="hand-card ${selected===card.id?'selected':''} ${discards.has(card.id)?'discard-selected':''}" data-do="card" data-card="${card.id}" style="--rot:${(i-(g.hand.length-1)/2)*8}deg" title="${esc(cardName(card))}" aria-label="${esc(cardName(card))}${selected===card.id?', seleccionada':''}" aria-pressed="${selected===card.id||discards.has(card.id)}">${cardSVG(card)}${discards.has(card.id)?`<span class="card-check">${icon('check')}</span>`:''}</button>`).join('')}</div>
-        <div class="hand-actions">${discarding?`
+        <div class="hand-actions">${room.status==='playing'&&ownMember?.autopilot?`<button class="primary" data-do="takeover" ${busy?'disabled':''}>${icon('users')}Retomar control</button>`:''}${discarding?`
           <button class="primary" data-do="confirm-discard" ${!discards.size||!myTurn||busy?'disabled':''}>${icon('trash')}Cambiar ${discards.size||''} carta${discards.size===1?'':'s'}</button>
           <button class="secondary" data-do="cancel">Cancelar</button>`:`
           ${c?`<button class="primary" data-do="play" ${!myTurn||!actions().length||busy?'disabled':''}>${icon('arrow')}${armed?'Elegir destino':'Jugar carta'}</button>`:''}
           <button class="${c?'secondary':'discard-toggle'}" data-do="discard" ${!myTurn||busy?'disabled':''}>${icon('trash')}Cambiar cartas</button>
-          ${room.status==='finished'?`<button class="primary" data-do="winner">${icon('trophy')}Ver resultado</button>`:''}`}
+          ${room.status==='finished'?`<button class="primary" data-do="winner">${icon('trophy')}${room.rematch?.status==='pending'?'Confirmar revancha':'Ver resultado'}</button>`:''}`}
         </div>
         <p class="hand-hint">${esc(hint)}</p>
       </div>
@@ -196,8 +202,8 @@ function animateCard(e,from){
   const anim=fly.animate([{transform:'perspective(800px) translate3d(0,0,0) rotateX(0deg) rotateZ(-5deg) scale(1)'},{transform:`perspective(800px) translate3d(${dx*.5}px,${dy*.5-85*tableScale}px,${140*tableScale}px) rotateX(-30deg) rotateZ(${angle*.4+12}deg) scale(1.25)`,offset:.5},{transform:`perspective(800px) translate3d(${dx}px,${dy}px,0) rotateX(${incline}deg) rotateZ(${angle}deg) scale(${scale})`}],{duration:620,easing:'cubic-bezier(.22,.61,.36,1)'});
   anim.finished.then(()=>{fly.remove();target.classList.add('body-pop');setTimeout(()=>target.classList.remove('body-pop'),500);});
 }
-function openModal(html){modal.innerHTML=html;if(!modal.open)modal.showModal();}
-function closeModal(){if(modal.open)modal.close();}
+function openModal(html){delete modal.dataset.view;modal.innerHTML=html;if(!modal.open)modal.showModal();}
+function closeModal(){delete modal.dataset.view;if(modal.open)modal.close();}
 function modalHead(title,kicker='EL LABORATORIO'){return `<div class="modal-head"><div><div class="eyebrow">${kicker}</div><h2>${title}</h2></div><button class="icon-btn" data-do="close-modal" aria-label="Cerrar">${icon('close')}</button></div>`;}
 function showChoices(opts){openModal(`${modalHead('Elige un cuerpo para intercambiar','ERROR MÉDICO')}<p class="modal-copy">Tu cuerpo completo y el del rival intercambian posiciones. Incluye los órganos inmunizados.</p><div class="choose-list">${opts.map(a=>{const p=room.game.players.find(p=>p.id===a.targetPlayerId);return `<button class="choice" data-do="choice" data-key="${a.key}"><span>${esc(p.name)} · ${p.body.length} órganos · ${p.healthy} sanos</span>${icon('arrow')}</button>`;}).join('')}</div>`);}
 let contagionAction=null;
@@ -215,11 +221,19 @@ function showRules(tab='basic'){
   openModal(`${modalHead('La receta del caos')}${tabs}${content}<div class="rule-source">Reglas: el reglamento VIRUS! que adjuntaste y <a href="https://tranjisgames.com/blog/nuestros-juegos-7/virus-preguntas-frecuentes-9" target="_blank" rel="noreferrer">las aclaraciones de Tranjis Games</a>. Ilustraciones originales de esta adaptación.</div>`);
 }
 function showCatalog(){const cards=['organ','virus','medicine'].flatMap(type=>['red','green','blue','yellow','wild'].map(color=>({id:`catalog-${type}-${color}`,type,color}))).concat(Object.keys(SPECIAL_NAMES).map(special=>({id:`catalog-${special}`,type:'special',special,color:'purple'})));openModal(`${modalHead('Conoce a los sospechosos','LAS CARTAS')}<p class="modal-copy">Una familia de ilustraciones vectoriales originales. Cinco colores, cuatro tipos y demasiadas formas de meterse en problemas.</p><div class="catalog">${cards.map(c=>`<div class="catalog-card">${cardSVG(c)}${esc(cardName(c))}</div>`).join('')}</div>`);}
+function rematchControls(){
+  const vote=room.rematch;
+  if(vote?.status==='pending'){
+    const accepted=vote.acceptedIds.includes(room.meId),declined=vote.declinedIds.includes(room.meId),requester=room.members.find(m=>m.id===vote.requestedBy);
+    return `<section class="rematch-panel" aria-label="Confirmación de revancha"><h3>${esc(requester?.name||'Un jugador')} propone una revancha</h3><p>Se inicia cuando todos respondan o al terminar la cuenta regresiva, con al menos dos participantes confirmados y conectados.</p><div class="rematch-clock">Tiempo para decidir: <b data-countdown-until="${vote.deadline}"></b></div><ul class="rematch-players">${room.members.filter(m=>vote.eligibleIds.includes(m.id)).map(m=>`<li><span>${esc(m.name)}${m.id===room.meId?' (tú)':''}</span><strong>${vote.acceptedIds.includes(m.id)?m.connected?'Confirmado':'Confirmó · sin conexión':vote.declinedIds.includes(m.id)?'No participa':'Esperando'}</strong></li>`).join('')}</ul>${accepted?'<p class="rematch-answer">Ya confirmaste tu participación.</p>':declined?'<p class="rematch-answer">Elegiste no participar.</p>':''}<div class="modal-actions"><button class="primary" data-do="rematch-accept" ${accepted||busy?'disabled':''}>${icon('check')}Confirmar revancha</button><button class="secondary" data-do="rematch-decline" ${declined||busy?'disabled':''}>No participar</button></div></section>`;
+  }
+  return `${vote?.status==='cancelled'?`<p class="rematch-answer">${esc(vote.message)}</p>`:''}${room.game.players.length<2?'<button class="primary" data-do="leave">Crear otra sala</button>':`<button class="primary" data-do="rematch">${icon('spark')}Solicitar revancha</button>`}`;
+}
 function showWinner(){
   if(room?.status!=='finished')return;
   const winner=room.game.players.find(p=>p.id===room.game.winnerId);if(!winner)return;
   const won=winner.id===room.meId, forfeit=room.game.winnerReason==='abandonment';
-  openModal(`<div class="winner"><div class="winner-icon">${icon('trophy')}</div><h2>${won?'El laboratorio es tuyo.':`${esc(winner.name)} se lleva la gloria.`}</h2><p>${forfeit?'Victoria por abandono. Los demás jugadores agotaron sus cinco minutos para regresar.':won?'Cuatro órganos sanos. Unas cuantas amistades en observación.':'Un cuerpo completo. Una victoria contagiosa.'}</p>${forfeit?'':`<div class="winner-body">${winner.body.filter(o=>status(o)!=='infected').slice(0,4).map(o=>cardSVG(o.card)).join('')}</div>`}${room.game.players.length<2?'<button class="primary" data-do="leave">Crear otra sala</button>':room.hostId===room.meId?`<button class="primary" data-do="rematch">${icon('spark')}Otra dosis · Revancha</button>`:'<p>El anfitrión puede iniciar una revancha.</p>'}<button class="secondary" data-do="close-modal">Volver a la mesa</button></div>`);tone('turn');
+  openModal(`<div class="winner"><div class="winner-icon">${icon('trophy')}</div><h2>${won?'El laboratorio es tuyo.':`${esc(winner.name)} se lleva la gloria.`}</h2><p>${forfeit?'Victoria por abandono. Los demás jugadores quedaron eliminados por ausencia o inactividad.':won?'Cuatro órganos sanos. Unas cuantas amistades en observación.':'Un cuerpo completo. Una victoria contagiosa.'}</p>${forfeit?'':`<div class="winner-body">${winner.body.filter(o=>status(o)!=='infected').slice(0,4).map(o=>cardSVG(o.card)).join('')}</div>`}${rematchControls()}<button class="secondary" data-do="close-modal">Volver a la mesa</button></div>`);modal.dataset.view='winner';updateCountdowns();
 }
 async function copyInvite(){const url=`${location.origin}/?sala=${room.code}`;try{await navigator.clipboard.writeText(url);notify('Invitación copiada. Compártela con tus amigos.');}catch{openModal(`${modalHead('Invita a tus cómplices')}<p class="modal-copy">Comparte este enlace. Solo incluye el código de la sala.</p><label class="field">Enlace de invitación<input value="${esc(url)}" readonly id="invite-link"/></label><p class="modal-copy">Código: <b>${room.code}</b></p>`);document.querySelector('#invite-link').select();}}
 function askLeave(){if(!room)return;openModal(`${modalHead('¿Salimos del laboratorio?')}<p class="modal-copy">${room.practice?'La partida de práctica se cerrará.':room.status==='lobby'?'Dejarás libre tu asiento. Los demás pueden seguir reuniéndose.':room.status==='finished'?'La partida terminó. Puedes volver al inicio y crear otra sala.':'Tienes cinco minutos para regresar desde «Reanudar sala» en este navegador. Si no vuelves, quedarás eliminado y tus cartas se devolverán al mazo. Si queda un solo jugador, ganará por abandono.'}</p><div class="modal-actions"><button class="secondary" data-do="close-modal">Seguir aquí</button><button class="primary" data-do="confirm-leave">Salir de la sala ${icon('exit')}</button></div>`);}
@@ -234,7 +248,8 @@ document.addEventListener('click',e=>{
   if(cmd==='practice'){const input=document.querySelector('#player-name');if(!input.value.trim()){input.focus();notify('Escribe tu nombre para entrar al laboratorio.',true);return;}localStorage.setItem('virus:name',input.value.trim());request('practice',{name:input.value.trim(),roomName:'Práctica del laboratorio',maxPlayers:roomCapacity});return;}
   if(cmd==='resume'){if(recent.length){session=recent[0];store();send({type:'resume',...session});}return;}
   if(cmd==='invite'){if(!room.practice)copyInvite();else notify('La práctica es privada. Crea una sala para jugar con amigos.');return;}
-  if(cmd==='start'||cmd==='rematch'){request(cmd);return;}
+  if(cmd==='start'||cmd==='rematch'||cmd==='takeover'){request(cmd);return;}
+  if(cmd==='rematch-accept'||cmd==='rematch-decline'){request('rematchReply',{rematchId:room.rematch?.id,accept:cmd==='rematch-accept'});return;}
   if(cmd==='leave'){askLeave();return;}
   if(cmd==='confirm-leave'){if(room.status==='lobby'||room.practice)recent=recent.filter(s=>s.code!==room.code);request('leave');return;}
   if(cmd==='winner'){showWinner();return;}

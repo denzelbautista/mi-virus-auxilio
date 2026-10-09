@@ -12,6 +12,7 @@ body.in-game{height:100vh;height:100dvh;min-height:0;overflow:hidden;display:fle
 .game-viewport[data-fitted] .player-tag{transition:background-color .3s,border-color .3s,box-shadow .3s}
 .game-viewport[data-fitted] .table-label,.game-viewport[data-fitted] .turn-counter,.game-viewport[data-fitted] .pile-label{font-size:clamp(12px,calc(10px / var(--board-scale)),20px)}
 .game-viewport[data-fitted] .hand-actions button{font-size:clamp(13px,calc(11px / var(--board-scale)),20px)}
+.game-viewport[data-fitted] .pilot-status{font-size:clamp(12px,calc(11px / var(--board-scale)),20px)}
 @media(min-width:851px){.game-viewport .expanded-table .own-player{top:-46px}}
 @media(max-width:1200px){.in-game .game-layout{grid-template-columns:minmax(0,1fr)}}
 @media(max-width:700px){
@@ -23,7 +24,7 @@ body.in-game{height:100vh;height:100dvh;min-height:0;overflow:hidden;display:fle
   .game-viewport[data-fitted] .table:not(.expanded-table) .seat .hand-backs{top:110px}
   .game-viewport[data-fitted] .table:not(.expanded-table) .seat-left .body-cards,.game-viewport[data-fitted] .table:not(.expanded-table) .seat-right .body-cards{top:110px}
   .game-viewport[data-fitted] .table:not(.expanded-table) .seat-top .body-cards{top:175px}
-  .game-viewport[data-fitted] .table:not(.expanded-table) .own-player{top:-70px}
+  .game-viewport[data-fitted] .table:not(.expanded-table) .own-player{top:-100px}
   .game-viewport[data-fitted] .table:not(.expanded-table) .own-zone{bottom:calc(360px + max(12px,36px / var(--board-scale) - 60px))}
   .game-viewport[data-fitted] .hand-actions{margin-top:36px}
   .game-viewport[data-fitted] .hand-actions button{min-height:calc(36px / var(--board-scale))}
@@ -36,6 +37,8 @@ body.in-game{height:100vh;height:100dvh;min-height:0;overflow:hidden;display:fle
   .game-viewport[data-fitted] .expanded-table .seat .body-cards{top:120px}
   .game-viewport[data-fitted] .expanded-table .own-player .player-name{font-size:20px;max-width:270px}
   .game-viewport[data-fitted] .expanded-table .own-player .avatar{width:44px;height:44px;font-size:19px}
+  .game-viewport[data-fitted] .expanded-table .own-player{top:-140px;left:calc(50% - 35px)}
+  .game-viewport[data-fitted] .expanded-table .own-player .player-tag{max-width:200px}
   .game-viewport[data-fitted] .expanded-table .own-body{transform:translateY(-72px)}
   .game-viewport[data-fitted] .expanded-table .own-zone{top:calc(80px + var(--rival-rows)*180px + 215px - max(0px,36px / var(--board-scale) - 66px))}
   .game-viewport[data-fitted] .expanded-table .turn-pill{font-size:20px;top:-78px}

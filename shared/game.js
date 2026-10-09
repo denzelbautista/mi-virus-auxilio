@@ -153,7 +153,7 @@ function checkWinner(g, preferredId) {
   const ordered = [g.players.find(p => p.id === preferredId), ...g.players.filter(p => p.id !== preferredId)];
   const winner = ordered.find(p => healthyCount(p) >= 4); if (winner) g.winnerId = winner.id;
 }
-export function eliminatePlayers(g, playerIds, random = Math.random) {
+export function eliminatePlayers(g, playerIds, random = Math.random, reason = { kind: 'disconnect' }) {
   if (g.winnerId || g.abandoned) return [];
   const ids = new Set(playerIds), previous = g.players.slice(), currentIndex = g.turn;
   const removed = previous.filter(p => ids.has(p.id));
@@ -166,8 +166,8 @@ export function eliminatePlayers(g, playerIds, random = Math.random) {
   if (next && ids.has(previous[currentIndex].id) && previous.indexOf(next) < currentIndex) g.round++;
   if (g.players.length === 1) { g.winnerId = g.players[0].id; g.winnerReason = 'abandonment'; }
   if (!g.players.length) g.abandoned = true;
-  event(g, { kind: 'elimination', actorId: removed[0].id, eliminatedPlayerIds: removed.map(p => p.id), returnedCount: returned.length,
-    text: `${removed.map(p => p.name).join(', ')} ${removed.length === 1 ? 'queda eliminado' : 'quedan eliminados'} tras cinco minutos de ausencia.${g.winnerId ? ` ${g.players[0].name} gana por abandono.` : g.abandoned ? ' La partida terminó sin jugadores.' : ` Sus ${returned.length} cartas vuelven al mazo.`}` });
+  event(g, { kind: 'elimination', reason: reason.kind, actorId: removed[0].id, eliminatedPlayerIds: removed.map(p => p.id), returnedCount: returned.length,
+    text: `${removed.map(p => p.name).join(', ')} ${removed.length === 1 ? 'queda eliminado' : 'quedan eliminados'} ${reason.kind === 'autopilot' ? `tras ${reason.turns || 15} turnos en piloto automático` : 'tras cinco minutos de ausencia'}.${g.winnerId ? ` ${g.players[0].name} gana por abandono.` : g.abandoned ? ' La partida terminó sin jugadores.' : ` Sus ${returned.length} cartas vuelven al mazo.`}` });
   return removed;
 }
 export function refillTurn(g) {

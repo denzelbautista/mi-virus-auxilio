@@ -66,6 +66,14 @@
 .turn-pill{white-space:nowrap;font-size:13px;padding:9px 17px;top:-44px}
 .disconnect-count{font-variant-numeric:tabular-nums;color:#f1d095;font-weight:750;margin-left:3px}
 .turn-pill.disconnected{border-color:#e5b78330;background:#3c392b;color:#f1d095}
+.pilot-status{position:absolute;top:calc(100% + 6px);left:0;width:190px;max-width:230px;color:var(--muted);font-size:12px;line-height:1.45;pointer-events:none}
+.pilot-status strong,.pilot-status span{display:block}.pilot-status b{font-variant-numeric:tabular-nums}.pilot-status.automatic{color:#f1d095}.pilot-status strong{font-size:inherit}
+.expanded-table .pilot-status{left:50%;transform:translateX(-50%);text-align:center}
+@media(max-width:700px){.pilot-status{left:50%;transform:translateX(-50%);text-align:center}}
+.rematch-panel{margin:22px 0;padding:18px;border:1px solid #d7f68b30;border-radius:14px;background:#d7f68b08;text-align:left}
+.rematch-panel h3{font-size:18px;margin:0 0 10px}.rematch-panel p{font-size:14px;line-height:1.5}
+.rematch-clock{font-size:14px;color:#d7f68b;margin:14px 0;font-variant-numeric:tabular-nums}
+.rematch-players{list-style:none;padding:0;margin:12px 0}.rematch-players li{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 0;border-bottom:1px solid #ffffff0c;font-size:14px}.rematch-players li span{min-width:0;overflow-wrap:anywhere}.rematch-players strong{flex-shrink:0;font-size:12px;color:#c4d5ad}.rematch-panel .modal-actions{flex-wrap:wrap}.rematch-answer{color:#d7f68b;font-size:14px}
 .table-label,.turn-counter{font-size:12px}
 .feed{min-height:940px}.feed-title{font-size:14px}.feed-title span{font-size:10px}.objective strong{font-size:14px}.objective p,.log-entry{font-size:13px}.log-title{font-size:11px}.log-entry small{font-size:10px}.feed-tip,.feed-tip button{font-size:12px}
 @media(max-width:1200px){.game-layout{grid-template-columns:1fr}.feed{display:none}}
