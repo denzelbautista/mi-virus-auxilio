@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { newGame, publicGame, legalActions, act, refillTurn, healthyCount, status, eliminatePlayers } from '../shared/game.js';
 import { Store } from './store.js';
 import { adminApi } from './admin.js';
+import { allowedOrigin, playerCors } from './origins.js';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MAX_PLAYERS = Math.max(2, Math.min(8, Math.trunc(Number(process.env.MAX_PLAYERS)) || 8));
@@ -19,24 +20,35 @@ const AUTO_DELAY_MS = Number(process.env.AUTO_DELAY_MS) || 1800;
 const REMATCH_TIMEOUT_MS = Number(process.env.REMATCH_TIMEOUT_MS) || 90_000;
 const AUTO_TURN_LIMIT = 15;
 const rooms = new Map(), sockets = new Map(), timers = new Map(), offlineTimers = new Map(), rematchTimers = new Map();
+let shuttingDown = false;
 const id = () => randomBytes(16).toString('hex');
 const DB_FILE = resolve(process.env.DB_FILE || `${dirname(STATE_FILE)}/virus.sqlite`);
 const store = new Store(DB_FILE);
 function save() {
   mkdirSync(dirname(STATE_FILE), { recursive: true });
-  writeFileSync(`${STATE_FILE}.tmp`, JSON.stringify([...rooms.values()]), { mode: 0o600 });
+  const serverSavedAt = Date.now();
+  writeFileSync(`${STATE_FILE}.tmp`, JSON.stringify([...rooms.values()].map(r => ({ ...r, serverSavedAt }))), { mode: 0o600 });
   renameSync(`${STATE_FILE}.tmp`, STATE_FILE);
 }
 if (existsSync(STATE_FILE)) {
   try {
     for (const r of JSON.parse(readFileSync(STATE_FILE, 'utf8'))) {
       r.id ||= id(); r.createdAt ||= r.updatedAt || Date.now();
+      // Pause gameplay deadlines while the server is down. Access expiry stays absolute.
+      const downtime = Number.isSafeInteger(r.serverSavedAt) ? Math.max(0, Date.now() - r.serverSavedAt) : 0;
+      if (downtime) {
+        for (const p of r.members) if (!p.connected && p.offlineSince) p.offlineSince += downtime;
+        if (r.turnClock?.deadline) r.turnClock.deadline += downtime;
+        if (r.rematch?.status === 'pending') r.rematch.deadline += downtime;
+        r.updatedAt += downtime;
+      }
       for (const p of r.members) if (p.bot) { p.connected = true; p.offlineSince = null; } else { p.offlineSince = !p.connected && p.offlineSince ? p.offlineSince : Date.now(); p.connected = false; }
       r.version++; rooms.set(r.code, r);
     }
   } catch (e) { console.error('No se pudo recuperar rooms.json. Conserva el archivo y revisa su contenido.', e.message); process.exit(1); }
 }
 store.recover(rooms);
+if (rooms.size) save();
 function createRoom(options) {
   if (rooms.size >= MAX_ROOMS) throw new Error('El servidor está lleno. Intenta más tarde.');
   const capacity = options.maxPlayers === undefined ? MAX_PLAYERS : options.maxPlayers;
@@ -59,7 +71,13 @@ const server = http.createServer(async (req, res) => {
   let path;
   try { path = decodeURIComponent(new URL(req.url, 'http://localhost').pathname); } catch { res.writeHead(400).end(); return; }
   if (await handleApi(req, res, path)) return;
-  if (path === '/health') { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify({ ok: true, rooms: rooms.size, capacity: MAX_PLAYERS })); return; }
+  if (path === '/health') {
+    if (!allowedOrigin(req, true)) { res.writeHead(403).end(); return; }
+    if (!['GET', 'HEAD'].includes(req.method)) { res.writeHead(405).end(); return; }
+    playerCors(req, res);
+    res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' });
+    res.end(req.method === 'HEAD' ? undefined : JSON.stringify({ ok: true, rooms: rooms.size, capacity: MAX_PLAYERS })); return;
+  }
   if (req.method !== 'GET' && req.method !== 'HEAD') { res.writeHead(405).end(); return; }
   const allowed = path === '/' ? '/public/index.html' : path === '/admin' || path === '/admin/' ? '/public/admin.html' : path.startsWith('/shared/') ? path : path === '/vendor/three.module.js' ? '/node_modules/three/build/three.module.js' : path === '/vendor/three.core.js' ? '/node_modules/three/build/three.core.js' : `/public${path}`;
   const file = resolve(ROOT, `.${allowed}`);
@@ -211,9 +229,7 @@ function begin(r) {
   store.startMatch(r);
 }
 wss.on('connection', (ws, req) => {
-  if (req.headers.origin) {
-    try { if (new URL(req.headers.origin).host !== req.headers.host) { ws.close(1008, 'Origen no permitido'); return; } } catch { ws.close(1008); return; }
-  }
+  if (!allowedOrigin(req, true)) { ws.close(1008, 'Origen no permitido'); return; }
   ws.alive = true; ws.bucket = { start: Date.now(), count: 0 };
   ws.on('pong', () => { ws.alive = true; });
   send(ws, { type: 'hello', maxPlayers: MAX_PLAYERS, accessRequired: true });
@@ -301,6 +317,7 @@ wss.on('connection', (ws, req) => {
     } catch (e) { send(ws, { type: 'error', message: e instanceof SyntaxError ? 'Solicitud inválida.' : e.message }); }
   });
   ws.on('close', () => {
+    if (shuttingDown) return;
     if (!ws.token || sockets.get(ws.token) !== ws) return;
     const r = rooms.get(ws.roomCode), p = r?.members.find(p => p.token === ws.token); sockets.delete(ws.token);
     if (p) { p.connected = false; p.offlineSince = Date.now(); broadcast(r); }
@@ -314,5 +331,5 @@ const heartbeat = setInterval(() => {
 heartbeat.unref();
 server.listen(PORT, process.env.HOST || '0.0.0.0', () => console.log(`VIRUS! listo en http://localhost:${server.address().port} · ${MAX_PLAYERS} plazas por sala`));
 for (const r of rooms.values()) { if (!expireAbsent(r)) { schedule(r); scheduleOffline(r); scheduleRematch(r); } }
-function shutdown() { clearInterval(heartbeat); for (const t of timers.values()) clearTimeout(t); for (const t of offlineTimers.values()) clearTimeout(t); for (const t of rematchTimers.values()) clearTimeout(t); save(); for (const ws of wss.clients) ws.close(1001, 'Reiniciando servidor'); wss.close(); server.close(() => { store.close(); process.exit(0); }); setTimeout(() => process.exit(0), 2000).unref(); }
+function shutdown() { shuttingDown = true; clearInterval(heartbeat); for (const t of timers.values()) clearTimeout(t); for (const t of offlineTimers.values()) clearTimeout(t); for (const t of rematchTimers.values()) clearTimeout(t); save(); for (const ws of wss.clients) ws.close(1001, 'Reiniciando servidor'); wss.close(); server.close(() => { store.close(); process.exit(0); }); setTimeout(() => process.exit(0), 2000).unref(); }
 process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);

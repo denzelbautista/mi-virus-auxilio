@@ -8,6 +8,7 @@ services:
       STATE_FILE: /app/data/rooms.json
       DB_FILE: /app/data/virus.sqlite
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:-}
     volumes:
       - virus-data:/app/data
     restart: unless-stopped

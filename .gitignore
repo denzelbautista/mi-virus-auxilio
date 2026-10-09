@@ -20,6 +20,7 @@ Thumbs.db
 # Registros y cobertura
 *.log
 coverage/
+dist/
 
 # Capturas de referencia locales
 Captura de pantalla *.png

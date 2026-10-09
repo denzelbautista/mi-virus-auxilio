@@ -1,0 +1,46 @@
+name: virus-laboratorio-aws
+
+services:
+  virus:
+    build:
+      context: ..
+      dockerfile: Dockerfile
+    environment:
+      MAX_PLAYERS: "8"
+      STATE_FILE: /app/data/rooms.json
+      DB_FILE: /app/data/virus.sqlite
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      FRONTEND_ORIGINS: ${FRONTEND_ORIGINS:?Define el origen HTTPS del bucket en .env.production}
+      TRUST_PROXY: "true"
+    volumes:
+      - virus-data:/app/data
+    restart: unless-stopped
+    init: true
+    stop_grace_period: 10s
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+
+  caddy:
+    image: caddy:2-alpine
+    environment:
+      GAME_DOMAIN: ${GAME_DOMAIN:?Define el dominio de EC2 en .env.production}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      virus:
+        condition: service_healthy
+    restart: unless-stopped
+
+volumes:
+  virus-data:
+  caddy-data:
+  caddy-config:

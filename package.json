@@ -4,7 +4,17 @@
   "private": true,
   "type": "module",
   "description": "VIRUS! multijugador con salas independientes y cartas animadas",
-  "scripts": { "start": "node server/index.js", "dev": "node --watch server/index.js", "test": "node --test tests/*.test.js" },
+  "scripts": {
+    "start": "node server/index.js",
+    "dev": "node --watch server/index.js",
+    "test": "node --test tests/*.test.js",
+    "build:client": "node scripts/build-client.mjs",
+    "floci:up": "node scripts/floci.mjs up",
+    "floci:stop": "node scripts/floci.mjs stop",
+    "floci:start": "node scripts/floci.mjs start",
+    "floci:status": "node scripts/floci.mjs status",
+    "floci:verify": "node scripts/floci-verify.mjs"
+  },
   "engines": { "node": ">=22.13" },
   "dependencies": { "three": "^0.180.0", "ws": "^8.18.3" }
 }

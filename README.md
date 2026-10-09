@@ -43,7 +43,9 @@ Los accesos anteriores a este visor que solo tienen un hash no se pueden reconst
 - **`data/access-code.key`**: clave privada para consultar los códigos cifrados. Respáldala junto con SQLite; si se pierde, esos códigos no podrán mostrarse.
 - **`data/admin-password.txt`**: contraseña local generada si no configuras una propia; no se sirve por HTTP ni se añade a Git.
 
-Mantén un solo proceso de juego y conserva el directorio `data` en EC2. Para un respaldo consistente, detén el servidor y copia el directorio completo (incluidos los archivos WAL si existen), o utiliza la herramienta de respaldo de SQLite. Reiniciar conserva códigos, cupos e historial. Una sala eliminada no libera cuotas. Si no restauras el archivo de salas, los registros en curso se marcan interrumpidos al iniciar; los códigos individuales de esas salas necesitarán reemplazo. La separación de interfaz y servidor para S3/EC2 sigue pendiente: esta entrega se ejecuta en local con HTTP y WebSocket en el mismo origen.
+Mantén un solo proceso de juego y conserva el directorio `data` en EC2. Para un respaldo consistente, detén el servidor y copia el directorio completo (incluidos los archivos WAL si existen), o utiliza la herramienta de respaldo de SQLite. Reiniciar conserva códigos, cupos e historial. Una sala eliminada no libera cuotas. Si no restauras el archivo de salas, los registros en curso se marcan interrumpidos al iniciar; los códigos individuales de esas salas necesitarán reemplazo. La interfaz también puede publicarse por separado en S3: consulta [la prueba local con Floci](docs/floci.md).
+
+Los nuevos guardados incluyen la fecha del último checkpoint del servidor. Al recuperar una sala, los plazos de ausencia, turno, revancha y caducidad por inactividad se desplazan por el tiempo transcurrido desde ese checkpoint. Las vigencias de códigos y salas administradas mantienen su fecha absoluta. Los archivos anteriores sin checkpoint conservan el comportamiento previo. Un apagado abrupto permite recuperar hasta el último guardado; el historial sigue midiendo la duración de las partidas por tiempo de calendario, incluida la interrupción.
 
 ## Jugar
 
@@ -87,6 +89,8 @@ El sistema está diseñado para **un proceso de servidor** con múltiples salas.
 |---|---|---|
 | `PORT` | `3000` | Puerto HTTP y WebSocket |
 | `HOST` | `0.0.0.0` | Dirección de escucha |
+| `FRONTEND_ORIGINS` | Vacío | Orígenes adicionales exactos del cliente para `/health`, `/api/access` y WebSocket, separados por comas; la administración mantiene el mismo origen |
+| `TRUST_PROXY` | Desactivado | Usa IP y protocolo de `X-Forwarded-*` solamente detrás de un proxy confiable, con Node sin exposición directa |
 | `MAX_PLAYERS` | `8` | Límite del servidor entre 2 y 8; cada nueva sala elige su capacidad |
 | `MAX_ROOMS` | `500` | Límite de salas por proceso, no garantía de carga |
 | `STATE_FILE` | `data/rooms.json` | Estado privado de salas |
@@ -110,6 +114,29 @@ Pruebas adicionales de administración y acceso: autenticación, origen, validac
 Pruebas del motor: distribución y escalado del mazo hasta ocho, manos privadas, colores, inmunidad, curas, vacunas, extirpación, cinco tratamientos, contagio máximo, guante, turnos, descarte, reciclaje del mazo, victorias y 68 partidas generadas completas entre 4 y 8 participantes, con conservación de todas las cartas. Pruebas del servidor: ocho clientes simultáneos, capacidades por sala, límite de ocho, siete bots, orden completo de turnos, reinicio de partidas ampliadas, cuatro clientes en salas anteriores, una segunda partida independiente, sala llena, acciones inválidas, revisiones antiguas, acceso del anfitrión, sesión privada, reconexión, sustitución de conexión, recuperación tras reinicio y eliminación por ausencia, devolución íntegra de cartas, avance correcto de turnos y victoria por abandono. Los tests acortan el plazo mediante `DISCONNECT_TIMEOUT_MS`; en el juego normal son cinco minutos. Se usan servidores temporales y un archivo separado; no se modifica la partida de desarrollo.
 
 ## Alojamiento
+
+Para publicar en AWS sin CloudFront, sigue [la guía de S3 + EC2](docs/aws-s3-ec2.md). Incluye `deploy/compose.aws.yaml`, Caddy con HTTPS automático, persistencia y pasos de apagado/encendido. La configuración de producción mantiene Node dentro de Docker y publica únicamente 80/443.
+
+### Prueba S3 + EC2 con Floci
+
+```sh
+floci start --persist=/Users/denzel/.floci/data
+npm run floci:up
+```
+
+Si Floci ya está ejecutándose con esa persistencia, basta con el segundo comando. Abre `http://localhost:4566/virus-laboratorio-local/index.html`. El servidor y el panel usan `http://localhost:3100` y `http://localhost:3100/admin`.
+
+`npm run floci:stop` apaga la instancia emulada y permite ver «El laboratorio está en espera» sin detener S3. `npm run floci:start` vuelve a encenderla; la interfaz reconecta automáticamente. `npm run floci:verify` comprueba recursos estáticos, acceso, una partida de dos personas, una jugada, apagado y recuperación del mismo asiento y mano. Genera un código de prueba en `tmp/floci/demo-access.txt`. El montaje, la persistencia y los límites de esta emulación se describen en [docs/floci.md](docs/floci.md).
+
+### Generar el cliente para S3
+
+```sh
+API_BASE_URL=https://juego.example.com npm run build:client
+```
+
+Publica solo el contenido de `dist/client/`. El build incluye las reglas compartidas y Three.js, configura API y WebSocket y deja la administración en EC2. Puedes definir `WS_URL` y `ADMIN_URL` si necesitas direcciones distintas. Las rutas de recursos son relativas para admitir tanto la URL de objetos de S3 como la emulación por ruta de Floci. En EC2, configura `FRONTEND_ORIGINS` con el origen público exacto del bucket. El cliente comprueba `/health` y espera el saludo WebSocket antes de habilitar el juego; conserva el acceso guardado durante errores de red.
+
+### Servidor con Docker
 
 ```sh
 docker compose up --build -d

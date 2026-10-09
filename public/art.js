@@ -1,4 +1,4 @@
-import { cardName } from '/shared/game.js';
+import { cardName } from './shared/game.js';
 export const palette = { red: ['#ff6477', '#9e284b', '#ffd3d8'], green: ['#a2d55e', '#416740', '#edf8b8'], blue: ['#70bef5', '#29568e', '#d4eeff'], yellow: ['#ffcf63', '#9d682b', '#fff1c0'], wild: ['#c28bfa', '#654790', '#f1dcff'], purple: ['#be99f1', '#604b83', '#ecddff'] };
 const eyes = (x=100,y=103) => `<g fill="#233e3d" stroke="none"><ellipse cx="${x}" cy="${y}" rx="4" ry="6"/><ellipse cx="${x+24}" cy="${y}" rx="4" ry="6"/></g><path d="M${x+2} ${y+14}q10 12 20 0" fill="none" stroke="#233e3d" stroke-width="3.5" stroke-linecap="round"/>`;
 export function art(c, uid='a') {

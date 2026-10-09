@@ -1,6 +1,8 @@
 import { randomBytes, scryptSync, timingSafeEqual } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, chmodSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { allowedOrigin, playerCors } from './origins.js';
+import { secureRequest, clientAddress } from './proxy.js';
 
 export function adminApi({ store, rooms, createRoom, maxPlayers, dbFile }) {
   const passwordFile = resolve(dirname(dbFile), 'admin-password.txt');
@@ -15,7 +17,7 @@ export function adminApi({ store, rooms, createRoom, maxPlayers, dbFile }) {
   const salt = randomBytes(16), passwordHash = scryptSync(password, salt, 32), attempts = new Map();
   const reply = (res, status, body, extra = {}) => { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...extra }); res.end(JSON.stringify(body)); };
   const cookie = req => /(?:^|;\s*)virus_admin=([A-Za-z0-9_-]+)/.exec(req.headers.cookie || '')?.[1];
-  const cookies = (req, value, age) => ({ 'Set-Cookie': `virus_admin=${value}; Path=/api/admin; HttpOnly; SameSite=Strict; Max-Age=${age}${req.socket.encrypted ? '; Secure' : ''}` });
+  const cookies = (req, value, age) => ({ 'Set-Cookie': `virus_admin=${value}; Path=/api/admin; HttpOnly; SameSite=Strict; Max-Age=${age}${secureRequest(req) ? '; Secure' : ''}` });
   async function body(req) {
     if (!req.headers['content-type']?.startsWith('application/json')) throw new Error('Se requiere JSON.');
     let raw = ''; for await (const chunk of req) { raw += chunk; if (raw.length > 8192) throw new Error('Solicitud demasiado grande.'); }
@@ -26,7 +28,7 @@ export function adminApi({ store, rooms, createRoom, maxPlayers, dbFile }) {
   };
   const label = value => typeof value === 'string' ? value.trim().slice(0, 80) : '';
   function rate(req, category, limit) {
-    const key = `${category}:${req.socket.remoteAddress}`, now = Date.now();
+    const key = `${category}:${clientAddress(req)}`, now = Date.now();
     if (attempts.size > 5000) for (const [k, v] of attempts) if (now - v.start > 60_000) attempts.delete(k);
     let entry = attempts.get(key); if (!entry || now - entry.start > 60_000) { entry = { start: now, n: 0 }; attempts.set(key, entry); }
     if (++entry.n > limit) return false; return true;
@@ -34,11 +36,15 @@ export function adminApi({ store, rooms, createRoom, maxPlayers, dbFile }) {
   return async (req, res, path) => {
     if (!path.startsWith('/api/')) return false;
     try {
-      if (!['GET', 'POST'].includes(req.method)) { reply(res, 405, { error: 'Método no permitido.' }); return true; }
-      if (req.method === 'POST' && req.headers.origin) {
-        const origin = new URL(req.headers.origin);
-        if (origin.host !== req.headers.host || !['http:', 'https:'].includes(origin.protocol)) { reply(res, 403, { error: 'Origen no permitido.' }); return true; }
+      const playerEndpoint = path === '/api/access';
+      if (!allowedOrigin(req, playerEndpoint)) { reply(res, 403, { error: 'Origen no permitido.' }); return true; }
+      if (playerEndpoint) playerCors(req, res);
+      if (req.method === 'OPTIONS' && playerEndpoint) {
+        const headers = (req.headers['access-control-request-headers'] || '').split(',').map(s => s.trim().toLowerCase()).filter(Boolean);
+        if (req.headers['access-control-request-method'] !== 'POST' || headers.some(h => h !== 'content-type')) { reply(res, 403, { error: 'Solicitud no permitida.' }); return true; }
+        res.writeHead(204, { 'Access-Control-Allow-Methods': 'POST', 'Access-Control-Allow-Headers': 'Content-Type', 'Access-Control-Max-Age': '600' }); res.end(); return true;
       }
+      if (!['GET', 'POST'].includes(req.method)) { reply(res, 405, { error: 'Método no permitido.' }); return true; }
       if (path === '/api/access' && req.method === 'POST') {
         if (!rate(req, 'access', 30)) { reply(res, 429, { error: 'Demasiados intentos. Espera un minuto.' }); return true; }
         const data = await body(req); reply(res, 200, data.token ? { access: store.view(store.access(data.token)) } : store.redeem(data.code)); return true;
